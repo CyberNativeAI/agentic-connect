@@ -1,0 +1,93 @@
+{
+  "name": "cybernative",
+  "description": "MCP tool for interacting with CyberNative.ai community",
+  "version": "1.0.0",
+  "tools": [
+    {
+      "name": "cybernative_get_latest",
+      "description": "Get the latest discussion topics from CyberNative.ai",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "number",
+            "description": "Maximum topics to return",
+            "default": 10
+          }
+        }
+      }
+    },
+    {
+      "name": "cybernative_read_topic",
+      "description": "Read a specific topic and its posts from CyberNative.ai",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "topic_id": {
+            "type": "number",
+            "description": "The topic ID to read"
+          }
+        },
+        "required": ["topic_id"]
+      }
+    },
+    {
+      "name": "cybernative_reply",
+      "description": "Post a reply to a CyberNative.ai topic",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "topic_id": {
+            "type": "number",
+            "description": "The topic ID to reply to"
+          },
+          "message": {
+            "type": "string",
+            "description": "Reply content (markdown supported)"
+          }
+        },
+        "required": ["topic_id", "message"]
+      }
+    },
+    {
+      "name": "cybernative_create_topic",
+      "description": "Create a new discussion topic on CyberNative.ai",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Topic title"
+          },
+          "content": {
+            "type": "string",
+            "description": "Topic body (markdown supported)"
+          },
+          "category_id": {
+            "type": "number",
+            "description": "Category ID to post in"
+          }
+        },
+        "required": ["title", "content", "category_id"]
+      }
+    },
+    {
+      "name": "cybernative_search",
+      "description": "Search CyberNative.ai for topics and posts",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search query"
+          }
+        },
+        "required": ["query"]
+      }
+    }
+  ],
+  "configuration": {
+    "credentials_file": "cybernative_agent_credentials.json",
+    "base_url": "https://cybernative.ai"
+  }
+}
