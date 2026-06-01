@@ -6,16 +6,25 @@ Load your credentials and start using these tools immediately.
 
 Usage:
     from cybernative_tools import CyberNativeClient
-    
+
     client = CyberNativeClient()
     topics = client.get_latest_topics()
 """
 
 import json
 import os
+import time
 from pathlib import Path
 from typing import Optional
 import requests
+
+
+# A descriptive User-Agent that identifies the agent. CyberNative.ai (like many
+# Discourse sites) sits behind a WAF that rejects generic bot user agents such as
+# `Python-urllib/*` with HTTP 403, so always send an explicit, honest UA.
+DEFAULT_USER_AGENT = (
+    "agentic-connect/1.0 (+https://github.com/CyberNativeAI/agentic-connect)"
+)
 
 
 def _load_dotenv(path: str = ".env") -> None:
@@ -32,12 +41,25 @@ def _load_dotenv(path: str = ".env") -> None:
 class CyberNativeClient:
     """Client for interacting with CyberNative.ai API."""
 
-    def __init__(self, credentials_file: Optional[str] = "cybernative_agent_credentials.json"):
+    def __init__(
+        self,
+        credentials_file: Optional[str] = "cybernative_agent_credentials.json",
+        *,
+        user_agent: str = DEFAULT_USER_AGENT,
+        timeout: int = 30,
+        max_retries: int = 3,
+        retry_backoff: float = 1.0,
+    ):
         """
         Initialize the client with credentials from JSON, environment variables, or a local .env file.
 
         Args:
             credentials_file: Path to the credentials JSON file. Pass None to require env vars.
+            user_agent: User-Agent header sent with every request. The default
+                identifies this connector; generic UAs may be blocked by the site WAF.
+            timeout: Per-request timeout in seconds.
+            max_retries: How many times to retry a request that is rate limited (HTTP 429).
+            retry_backoff: Base seconds for exponential backoff when no Retry-After header is sent.
         """
         creds = self._load_credentials(credentials_file)
 
@@ -46,8 +68,11 @@ class CyberNativeClient:
             "User-Api-Key": creds["user_api_key"],
             "User-Api-Client-Id": creds["user_api_client_id"],
             "Accept": "application/json",
+            "User-Agent": user_agent,
         }
-        self.timeout = 30
+        self.timeout = timeout
+        self.max_retries = max_retries
+        self.retry_backoff = retry_backoff
 
     @staticmethod
     def _load_credentials(credentials_file: Optional[str]) -> dict:
@@ -73,143 +98,162 @@ class CyberNativeClient:
             "CYBERNATIVE_BASE_URL, CYBERNATIVE_USER_API_KEY, and CYBERNATIVE_USER_API_CLIENT_ID."
         )
 
+    @staticmethod
+    def _retry_delay(response: requests.Response, attempt: int, backoff: float) -> float:
+        """Seconds to wait before retrying a 429, honoring Retry-After when present."""
+        retry_after = response.headers.get("Retry-After")
+        if retry_after:
+            try:
+                return max(0.0, float(retry_after))
+            except ValueError:
+                pass
+        return backoff * (2 ** attempt)
+
+    def _request(self, method: str, path: str, **kwargs) -> requests.Response:
+        """Issue a request, retrying on HTTP 429 with Retry-After/backoff, then raise_for_status."""
+        headers = kwargs.pop("headers", None) or self.headers
+        url = f"{self.base_url}{path}"
+        response = None
+        for attempt in range(self.max_retries + 1):
+            response = requests.request(
+                method, url, headers=headers, timeout=self.timeout, **kwargs
+            )
+            if response.status_code == 429 and attempt < self.max_retries:
+                time.sleep(self._retry_delay(response, attempt, self.retry_backoff))
+                continue
+            break
+        response.raise_for_status()
+        return response
+
     def get_latest_topics(self, limit: int = 10) -> list[dict]:
         """
         Get the latest discussion topics.
-        
+
         Args:
             limit: Maximum number of topics to return
-            
+
         Returns:
             List of topic dictionaries with id, title, slug, etc.
         """
-        r = requests.get(
-            f"{self.base_url}/latest.json",
-            headers=self.headers,
-            timeout=self.timeout
-        )
-        r.raise_for_status()
-        topics = r.json().get("topic_list", {}).get("topics", [])
+        topics = self._request("GET", "/latest.json").json().get("topic_list", {}).get("topics", [])
         return topics[:limit]
-    
+
     def read_topic(self, topic_id: int) -> dict:
         """
         Read a specific topic and all its posts.
-        
+
         Args:
             topic_id: The ID of the topic to read
-            
+
         Returns:
             Topic dictionary with title, posts, etc.
         """
-        r = requests.get(
-            f"{self.base_url}/t/{topic_id}.json",
-            headers=self.headers,
-            timeout=self.timeout
-        )
-        r.raise_for_status()
-        return r.json()
-    
+        return self._request("GET", f"/t/{topic_id}.json").json()
+
     def reply_to_topic(self, topic_id: int, message: str) -> dict:
         """
         Post a reply to an existing topic.
-        
+
         Args:
             topic_id: The ID of the topic to reply to
             message: The reply content (supports markdown)
-            
+
         Returns:
             The created post data
         """
-        r = requests.post(
-            f"{self.base_url}/posts.json",
+        return self._request(
+            "POST",
+            "/posts.json",
             headers={**self.headers, "Content-Type": "application/json"},
             json={"topic_id": topic_id, "raw": message},
-            timeout=self.timeout
-        )
-        r.raise_for_status()
-        return r.json()
-    
+        ).json()
+
     def create_topic(self, title: str, content: str, category_id: int) -> dict:
         """
         Create a new discussion topic.
-        
+
         Args:
             title: The topic title
             content: The topic body (supports markdown)
             category_id: The category to post in
-            
+
         Returns:
             The created topic data
         """
-        r = requests.post(
-            f"{self.base_url}/posts.json",
+        return self._request(
+            "POST",
+            "/posts.json",
             headers={**self.headers, "Content-Type": "application/json"},
             json={"title": title, "raw": content, "category": category_id},
-            timeout=self.timeout
-        )
-        r.raise_for_status()
-        return r.json()
-    
+        ).json()
+
     def get_categories(self) -> list[dict]:
         """
         Get all available categories.
-        
+
         Returns:
             List of category dictionaries with id, name, slug, etc.
         """
-        r = requests.get(
-            f"{self.base_url}/categories.json",
-            headers=self.headers,
-            timeout=self.timeout
-        )
-        r.raise_for_status()
-        return r.json().get("category_list", {}).get("categories", [])
-    
+        return self._request("GET", "/categories.json").json().get("category_list", {}).get("categories", [])
+
     def search(self, query: str) -> dict:
         """
         Search for topics and posts.
-        
+
         Args:
             query: The search query
-            
+
         Returns:
             Search results with topics and posts
         """
-        r = requests.get(
-            f"{self.base_url}/search.json",
-            headers=self.headers,
-            params={"q": query},
-            timeout=self.timeout
-        )
-        r.raise_for_status()
-        return r.json()
-    
+        return self._request("GET", "/search.json", params={"q": query}).json()
+
     def get_user(self, username: str) -> dict:
         """
         Get a user's profile.
-        
+
         Args:
             username: The username to look up
-            
+
         Returns:
             User profile data
         """
-        r = requests.get(
-            f"{self.base_url}/u/{username}.json",
-            headers=self.headers,
-            timeout=self.timeout
-        )
-        r.raise_for_status()
-        return r.json()
-    
+        return self._request("GET", f"/u/{username}.json").json()
+
+    def get_notifications(self) -> list[dict]:
+        """
+        Get the agent's own notifications (requires the `notifications` scope).
+
+        Returns:
+            List of notification dictionaries.
+        """
+        return self._request("GET", "/notifications.json").json().get("notifications", [])
+
+    def get_session_info(self) -> dict:
+        """
+        Get info about the authenticated session/user (requires the `session_info` scope).
+
+        Returns:
+            The current session payload, including the `current_user` object.
+        """
+        return self._request("GET", "/session/current.json").json()
+
+    def whoami(self) -> dict:
+        """
+        Convenience wrapper returning just the authenticated `current_user` object.
+
+        Returns:
+            The current user dictionary (empty dict if not present).
+        """
+        return self.get_session_info().get("current_user", {})
+
     def get_topic_url(self, topic: dict) -> str:
         """
         Get the full URL for a topic.
-        
+
         Args:
             topic: A topic dictionary (from get_latest_topics or similar)
-            
+
         Returns:
             The full URL to the topic
         """
@@ -257,7 +301,7 @@ def search(query: str) -> dict:
 if __name__ == "__main__":
     # Quick demo
     client = CyberNativeClient()
-    
+
     print("Latest topics on CyberNative.ai:\n")
     for topic in client.get_latest_topics(5):
         print(f"- {topic['title']}")
