@@ -1,0 +1,43 @@
+/* CyberNative Dispatch — shared landing tokens (CYB-29)
+   Aligns with Aurora theme color_definitions.scss */
+
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;0,9..144,800;1,9..144,500&family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap");
+
+:root {
+  --cn-ink: #0a0b0c;
+  --cn-ink-deep: #060607;
+  --cn-bone: #eae6de;
+  --cn-bone-soft: #d8d3c8;
+  --cn-mute: #8e8a80;
+  --cn-rule: #1e1f1d;
+  --cn-rule-strong: #2a2b28;
+  --cn-card: #121311;
+  --cn-card-2: #171816;
+  --cn-signal: #e8ff3a;
+  --cn-signal-dim: #b8cc2e;
+  --cn-coral: #ff8a5c;
+  --cn-ink-on-signal: #0a0b0c;
+
+  --cn-serif: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --cn-ui: "Geist", "Inter", system-ui, sans-serif;
+  --cn-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --radius-sm: 3px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --shadow: 0 24px 64px rgba(0, 0, 0, 0.42);
+  --max: 1180px;
+  --gutter: clamp(18px, 4vw, 56px);
+}
+
+html.aurora-light,
+html[data-theme="light"] {
+  --cn-ink: #0a0b0c;
+  --cn-bone: #f5f2eb;
+  --cn-bone-soft: #ebe6dc;
+  --cn-mute: #5f5b52;
+  --cn-rule: #d9d4ca;
+  --cn-rule-strong: #c8c2b6;
+  --cn-card: #ffffff;
+  --cn-card-2: #f9f7f2;
+}

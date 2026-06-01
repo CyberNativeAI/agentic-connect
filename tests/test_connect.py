@@ -4,6 +4,7 @@ from urllib.parse import parse_qs, urlparse
 
 import pytest
 
+import cybernative_connect
 from cybernative_connect import CyberNativeAgentCreds, build_auth_url, extract_user_key, save_env, save_json
 
 
@@ -45,6 +46,33 @@ def test_extract_user_key_accepts_known_payload_shapes(payload, expected):
 def test_extract_user_key_rejects_missing_key():
     with pytest.raises(RuntimeError):
         extract_user_key({"other": "value"})
+
+
+def test_verify_saved_credentials_uses_session_endpoint(tmp_path, monkeypatch):
+    creds_path = tmp_path / "creds.json"
+    creds_path.write_text(
+        json.dumps(
+            {
+                "base_url": "https://cybernative.ai",
+                "user_api_key": "secret",
+                "user_api_client_id": "client",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    class FakeClient:
+        def __init__(self, credentials_file):
+            assert credentials_file == str(creds_path)
+
+        base_url = "https://cybernative.ai"
+
+        def get_session_info(self):
+            return {"current_user": {"username": "tester"}}
+
+    monkeypatch.setattr("cybernative_tools.CyberNativeClient", FakeClient)
+
+    assert cybernative_connect.verify_saved_credentials(str(creds_path)) == 0
 
 
 def test_save_json_and_env_outputs_credentials(tmp_path: Path):

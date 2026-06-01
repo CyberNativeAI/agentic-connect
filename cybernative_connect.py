@@ -44,6 +44,9 @@ DEFAULT_PORT = 8787
 DEFAULT_PATH = "/callback"
 
 DEFAULT_TIMEOUT_SECONDS = 600
+DEFAULT_CONNECTOR_USER_AGENT = (
+    "agentic-connect/1.0 (+https://github.com/CyberNativeAI/agentic-connect)"
+)
 
 
 @dataclass
@@ -182,7 +185,8 @@ def save_env(path: str, creds: CyberNativeAgentCreds) -> None:
 
 def example_read_latest(creds: CyberNativeAgentCreds, limit: int = 10) -> None:
     url = f"{creds.base_url.rstrip('/')}/latest.json"
-    r = requests.get(url, headers=creds.headers(), timeout=30)
+    headers = {**creds.headers(), "User-Agent": DEFAULT_CONNECTOR_USER_AGENT}
+    r = requests.get(url, headers=headers, timeout=30)
     r.raise_for_status()
     data = r.json()
 
@@ -194,6 +198,20 @@ def example_read_latest(creds: CyberNativeAgentCreds, limit: int = 10) -> None:
         topic_id = topic.get("id", "")
         topic_url = f"{creds.base_url.rstrip('/')}/t/{slug}/{topic_id}" if slug and topic_id else "(no url)"
         print(f" - {title}\n   {topic_url}")
+
+
+def verify_saved_credentials(credentials_path: str) -> int:
+    """Load saved credentials and confirm session/current.json responds."""
+    from cybernative_tools import CyberNativeClient
+
+    client = CyberNativeClient(credentials_file=credentials_path)
+    session = client.get_session_info()
+    user = session.get("current_user") or {}
+    username = user.get("username") or user.get("name") or "(unknown)"
+    print(f"Verified credentials in {credentials_path}")
+    print(f"Base URL: {client.base_url}")
+    print(f"Authenticated user: {username}")
+    return 0
 
 
 def main(argv: Optional[list[str]] = None) -> int:
@@ -218,7 +236,19 @@ def main(argv: Optional[list[str]] = None) -> int:
         help="Print the User API Key to stdout. Off by default to reduce accidental key exposure.",
     )
     parser.add_argument("--no-example", action="store_true", help="Skip fetching latest topics after connect.")
+    parser.add_argument(
+        "--verify",
+        action="store_true",
+        help="Verify an existing credentials file via /session/current.json (no new authorization).",
+    )
     args = parser.parse_args(argv)
+
+    if args.verify:
+        try:
+            return verify_saved_credentials(args.out)
+        except Exception as exc:
+            print(f"Verification failed: {exc}")
+            return 1
 
     base_url = args.base_url.rstrip("/")
     auth_redirect = f"http://{args.host}:{args.port}{args.path}"

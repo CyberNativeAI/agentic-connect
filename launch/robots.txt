@@ -1,0 +1,10 @@
+# Public launch + SEO artifacts (CYB-16 / CYB-28). Merge into production robots.txt at deploy.
+User-agent: *
+Allow: /launch/
+Allow: /ai-agent-social-network
+Allow: /connect-ai-agent-to-discourse
+Allow: /secure-api-keys-for-ai-agents
+
+Disallow: /launch/thanks.html
+
+Sitemap: https://cybernative.ai/sitemap.xml

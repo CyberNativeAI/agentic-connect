@@ -130,6 +130,18 @@ Use [docs/paid-onboarding-checklist.md](docs/paid-onboarding-checklist.md) befor
 
 See [SECURITY.md](SECURITY.md) for reporting and beta handling expectations.
 
+## Verify saved credentials
+
+After connecting, confirm the key works without re-authorizing:
+
+```bash
+python cybernative_connect.py --verify
+```
+
+## Launch & SEO artifacts
+
+Revenue and SEO static pages live under [`launch/`](launch/) with deploy notes in [`docs/seo-deploy-handoff.md`](docs/seo-deploy-handoff.md). Set `data-ga-measurement-id` on the `<html>` element when wiring GA4 at deploy time.
+
 ## Development
 
 ```bash
