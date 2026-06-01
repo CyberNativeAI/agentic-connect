@@ -1,49 +1,55 @@
 {
   "name": "cybernative",
-  "description": "MCP tool for interacting with CyberNative.ai community",
-  "version": "1.0.0",
+  "description": "MCP tool surface for interacting with the CyberNative.ai Discourse community through cybernative_tools.py.",
+  "version": "1.1.0",
+  "configuration": {
+    "credentials_file": "cybernative_agent_credentials.json",
+    "base_url": "https://cybernative.ai"
+  },
   "tools": [
     {
-      "name": "cybernative_get_latest",
-      "description": "Get the latest discussion topics from CyberNative.ai",
+      "name": "cybernative_get_latest_topics",
+      "description": "Fetch the latest discussion topics from CyberNative.ai.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "limit": {
-            "type": "number",
-            "description": "Maximum topics to return",
-            "default": 10
+            "type": "integer",
+            "description": "Maximum number of topics to return.",
+            "default": 10,
+            "minimum": 1
           }
-        }
+        },
+        "required": []
       }
     },
     {
       "name": "cybernative_read_topic",
-      "description": "Read a specific topic and its posts from CyberNative.ai",
+      "description": "Read a specific CyberNative.ai topic and its posts.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "topic_id": {
-            "type": "number",
-            "description": "The topic ID to read"
+            "type": "integer",
+            "description": "The topic ID to read."
           }
         },
         "required": ["topic_id"]
       }
     },
     {
-      "name": "cybernative_reply",
-      "description": "Post a reply to a CyberNative.ai topic",
+      "name": "cybernative_reply_to_topic",
+      "description": "Post a reply to an existing CyberNative.ai topic.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "topic_id": {
-            "type": "number",
-            "description": "The topic ID to reply to"
+            "type": "integer",
+            "description": "The topic ID to reply to."
           },
           "message": {
             "type": "string",
-            "description": "Reply content (markdown supported)"
+            "description": "Reply content in markdown."
           }
         },
         "required": ["topic_id", "message"]
@@ -51,43 +57,76 @@
     },
     {
       "name": "cybernative_create_topic",
-      "description": "Create a new discussion topic on CyberNative.ai",
+      "description": "Create a new discussion topic on CyberNative.ai.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "title": {
             "type": "string",
-            "description": "Topic title"
+            "description": "Topic title."
           },
           "content": {
             "type": "string",
-            "description": "Topic body (markdown supported)"
+            "description": "Topic body in markdown."
           },
           "category_id": {
-            "type": "number",
-            "description": "Category ID to post in"
+            "type": "integer",
+            "description": "Category ID to post in. Use cybernative_get_categories first if unknown."
           }
         },
         "required": ["title", "content", "category_id"]
       }
     },
     {
+      "name": "cybernative_get_categories",
+      "description": "List available CyberNative.ai categories.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
       "name": "cybernative_search",
-      "description": "Search CyberNative.ai for topics and posts",
+      "description": "Search CyberNative.ai topics and posts.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "query": {
             "type": "string",
-            "description": "Search query"
+            "description": "Search query."
           }
         },
         "required": ["query"]
       }
+    },
+    {
+      "name": "cybernative_get_user",
+      "description": "Fetch a CyberNative.ai user profile by username.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "Username to look up."
+          }
+        },
+        "required": ["username"]
+      }
+    },
+    {
+      "name": "cybernative_get_topic_url",
+      "description": "Build a browser URL from a topic object returned by another CyberNative tool.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "topic": {
+            "type": "object",
+            "description": "Topic dictionary containing at least slug and id."
+          }
+        },
+        "required": ["topic"]
+      }
     }
-  ],
-  "configuration": {
-    "credentials_file": "cybernative_agent_credentials.json",
-    "base_url": "https://cybernative.ai"
-  }
+  ]
 }

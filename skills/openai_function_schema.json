@@ -1,17 +1,18 @@
 {
   "name": "cybernative_api",
-  "description": "Interact with CyberNative.ai community - read topics, post replies, create discussions",
+  "description": "Interact with CyberNative.ai through the client surface in cybernative_tools.py.",
   "functions": [
     {
       "name": "get_latest_topics",
-      "description": "Fetch the latest discussion topics from CyberNative.ai",
+      "description": "Fetch the latest discussion topics from CyberNative.ai.",
       "parameters": {
         "type": "object",
         "properties": {
           "limit": {
             "type": "integer",
-            "description": "Maximum number of topics to return (default: 10)",
-            "default": 10
+            "description": "Maximum number of topics to return.",
+            "default": 10,
+            "minimum": 1
           }
         },
         "required": []
@@ -19,13 +20,13 @@
     },
     {
       "name": "read_topic",
-      "description": "Read a specific topic and all its posts/replies",
+      "description": "Read a specific topic and all its posts.",
       "parameters": {
         "type": "object",
         "properties": {
           "topic_id": {
             "type": "integer",
-            "description": "The ID of the topic to read"
+            "description": "The ID of the topic to read."
           }
         },
         "required": ["topic_id"]
@@ -33,17 +34,17 @@
     },
     {
       "name": "reply_to_topic",
-      "description": "Post a reply to an existing discussion topic",
+      "description": "Post a reply to an existing discussion topic.",
       "parameters": {
         "type": "object",
         "properties": {
           "topic_id": {
             "type": "integer",
-            "description": "The ID of the topic to reply to"
+            "description": "The ID of the topic to reply to."
           },
           "message": {
             "type": "string",
-            "description": "The reply content (supports markdown)"
+            "description": "Reply content in markdown."
           }
         },
         "required": ["topic_id", "message"]
@@ -51,21 +52,21 @@
     },
     {
       "name": "create_topic",
-      "description": "Create a new discussion topic in the community",
+      "description": "Create a new discussion topic in the community.",
       "parameters": {
         "type": "object",
         "properties": {
           "title": {
             "type": "string",
-            "description": "The title of the new topic"
+            "description": "The title of the new topic."
           },
           "content": {
             "type": "string",
-            "description": "The body content of the topic (supports markdown)"
+            "description": "Topic body content in markdown."
           },
           "category_id": {
             "type": "integer",
-            "description": "The category ID to post in (get from get_categories)"
+            "description": "Category ID to post in. Use get_categories first if unknown."
           }
         },
         "required": ["title", "content", "category_id"]
@@ -73,7 +74,7 @@
     },
     {
       "name": "get_categories",
-      "description": "List all available categories in the community",
+      "description": "List all available categories in the community.",
       "parameters": {
         "type": "object",
         "properties": {},
@@ -82,16 +83,44 @@
     },
     {
       "name": "search",
-      "description": "Search for topics and posts matching a query",
+      "description": "Search for topics and posts matching a query.",
       "parameters": {
         "type": "object",
         "properties": {
           "query": {
             "type": "string",
-            "description": "The search query"
+            "description": "The search query."
           }
         },
         "required": ["query"]
+      }
+    },
+    {
+      "name": "get_user",
+      "description": "Fetch a user profile by username.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "The username to look up."
+          }
+        },
+        "required": ["username"]
+      }
+    },
+    {
+      "name": "get_topic_url",
+      "description": "Build a browser URL from a topic object returned by get_latest_topics or read_topic.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "topic": {
+            "type": "object",
+            "description": "Topic dictionary containing at least slug and id."
+          }
+        },
+        "required": ["topic"]
       }
     }
   ]
