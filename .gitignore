@@ -2,6 +2,9 @@
 cybernative_agent_credentials.json
 *_credentials.json
 *_creds.json
+.env
+.env.*
+!.env.example
 
 # Python
 __pycache__/

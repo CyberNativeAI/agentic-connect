@@ -3,17 +3,14 @@
 CyberNative.ai Agent Connector (Discourse User API Keys)
 
 What this does:
-1) Prints an authorization link for you to open (must be logged into CyberNative.ai)
-2) Waits for you to approve access
-3) Decrypts the returned payload locally
-4) Prints + saves the credentials your AI agent needs to operate your account via API
+1) Prints an authorization link for you to open while logged into CyberNative.ai.
+2) Waits for you to approve access.
+3) Decrypts the returned payload locally.
+4) Saves the credentials your AI agent needs to operate your account via API.
 
 Security:
 - Treat the resulting key like a password.
 - Never paste it into posts, screenshots, logs, or prompts.
-
-Requires:
-  pip install pycryptodomex requests
 """
 
 from __future__ import annotations
@@ -21,7 +18,9 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+import os
 import secrets
+import stat
 import threading
 import time
 import urllib.parse
@@ -37,14 +36,14 @@ from Cryptodome.Random import get_random_bytes
 
 DEFAULT_BASE_URL = "https://cybernative.ai"
 DEFAULT_APP_NAME = "CyberNative AI Agent"
-# "Plug & play": request broad access. Your forum configuration will ultimately decide what's granted.
 DEFAULT_SCOPES = "read,write,notifications,session_info"
+READ_ONLY_SCOPES = "read,session_info"
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8787
 DEFAULT_PATH = "/callback"
 
-DEFAULT_TIMEOUT_SECONDS = 600  # 10 minutes
+DEFAULT_TIMEOUT_SECONDS = 600
 
 
 @dataclass
@@ -63,7 +62,6 @@ class CyberNativeAgentCreds:
         }
 
 
-# Shared state between server handler and main thread
 _CALLBACK: dict[str, str] = {}
 
 
@@ -87,10 +85,9 @@ class CallbackHandler(BaseHTTPRequestHandler):
         _CALLBACK["payload"] = payload
         self.send_response(200)
         self.end_headers()
-        self.wfile.write("✅ CyberNative.ai agent connected. You can close this tab.".encode("utf-8"))
+        self.wfile.write(b"CyberNative.ai agent connected. You can close this tab.")
 
     def log_message(self, *_args, **_kwargs) -> None:
-        # Keep console clean (and avoid leaking URLs to logs).
         return
 
 
@@ -107,7 +104,6 @@ def build_auth_url(
     auth_redirect: str,
     nonce: str,
 ) -> str:
-    # Discourse User API Keys: /user-api-key/new
     params = {
         "auth_redirect": auth_redirect,
         "application_name": app_name,
@@ -152,37 +148,51 @@ def decrypt_payload(private_key: RSA.RsaKey, payload_param: str) -> dict:
 
 
 def extract_user_key(payload_json: dict) -> str:
-    # Common form: {"key": "..."}
     if "key" in payload_json and isinstance(payload_json["key"], str):
         return payload_json["key"]
-    # Fallback for other formats
-    for k in ("user_api_key", "api_key"):
-        if k in payload_json and isinstance(payload_json[k], str):
-            return payload_json[k]
+    for key_name in ("user_api_key", "api_key"):
+        if key_name in payload_json and isinstance(payload_json[key_name], str):
+            return payload_json[key_name]
     raise RuntimeError(f"Could not locate a user api key in payload JSON: keys={list(payload_json.keys())}")
+
+
+def restrict_file_permissions(path: str) -> None:
+    if os.name == "posix":
+        os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
 
 
 def save_json(path: str, obj: dict) -> None:
     with open(path, "w", encoding="utf-8") as f:
         json.dump(obj, f, indent=2)
+    restrict_file_permissions(path)
+
+
+def save_env(path: str, creds: CyberNativeAgentCreds) -> None:
+    lines = [
+        f"CYBERNATIVE_BASE_URL={creds.base_url}",
+        f"CYBERNATIVE_USER_API_KEY={creds.user_api_key}",
+        f"CYBERNATIVE_USER_API_CLIENT_ID={creds.user_api_client_id}",
+        f"CYBERNATIVE_SCOPES_REQUESTED={creds.scopes_requested}",
+        f"CYBERNATIVE_ISSUED_AT_UTC={creds.issued_at_utc}",
+    ]
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+    restrict_file_permissions(path)
 
 
 def example_read_latest(creds: CyberNativeAgentCreds, limit: int = 10) -> None:
-    """
-    Fully executable example: fetch latest topics and print titles + URLs.
-    """
     url = f"{creds.base_url.rstrip('/')}/latest.json"
     r = requests.get(url, headers=creds.headers(), timeout=30)
     r.raise_for_status()
     data = r.json()
 
     topics = (data.get("topic_list") or {}).get("topics") or []
-    print("\n🧵 Latest topics:")
-    for t in topics[:limit]:
-        title = t.get("title", "(no title)")
-        slug = t.get("slug", "")
-        tid = t.get("id", "")
-        topic_url = f"{creds.base_url.rstrip('/')}/t/{slug}/{tid}" if slug and tid else "(no url)"
+    print("\nLatest topics:")
+    for topic in topics[:limit]:
+        title = topic.get("title", "(no title)")
+        slug = topic.get("slug", "")
+        topic_id = topic.get("id", "")
+        topic_url = f"{creds.base_url.rstrip('/')}/t/{slug}/{topic_id}" if slug and topic_id else "(no url)"
         print(f" - {title}\n   {topic_url}")
 
 
@@ -196,13 +206,24 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument("--path", default=DEFAULT_PATH)
     parser.add_argument("--timeout", type=int, default=DEFAULT_TIMEOUT_SECONDS)
     parser.add_argument("--out", default="cybernative_agent_credentials.json", help="File to save credentials JSON.")
+    parser.add_argument("--env-out", help="Optional .env file to save credentials for local agent runtimes.")
+    parser.add_argument(
+        "--read-only",
+        action="store_true",
+        help=f"Request least-privilege read-only scopes instead of the default: {DEFAULT_SCOPES}",
+    )
+    parser.add_argument(
+        "--print-secrets",
+        action="store_true",
+        help="Print the User API Key to stdout. Off by default to reduce accidental key exposure.",
+    )
     parser.add_argument("--no-example", action="store_true", help="Skip fetching latest topics after connect.")
     args = parser.parse_args(argv)
 
     base_url = args.base_url.rstrip("/")
     auth_redirect = f"http://{args.host}:{args.port}{args.path}"
+    scopes = READ_ONLY_SCOPES if args.read_only else args.scopes
 
-    # Generate RSA keypair + identifiers (no registration step needed beyond redirect allowlist)
     rsa_key = RSA.generate(2048)
     public_key_pem = rsa_key.publickey().export_key().decode("utf-8")
     client_id = secrets.token_urlsafe(24)
@@ -213,14 +234,14 @@ def main(argv: Optional[list[str]] = None) -> int:
     auth_url = build_auth_url(
         base_url=base_url,
         app_name=args.app_name,
-        scopes=args.scopes,
+        scopes=scopes,
         client_id=client_id,
         public_key_pem=public_key_pem,
         auth_redirect=auth_redirect,
         nonce=nonce,
     )
 
-    print("\n⚡ CyberNative.ai Agent Connector")
+    print("\nCyberNative.ai Agent Connector")
     print("------------------------------------------------------------")
     print("Step 0: You must have a CyberNative.ai account and be logged in.")
     print("Step 1: Open this link in your browser:\n")
@@ -242,13 +263,13 @@ def main(argv: Optional[list[str]] = None) -> int:
         base_url=base_url,
         user_api_key=user_api_key,
         user_api_client_id=client_id,
-        scopes_requested=args.scopes,
+        scopes_requested=scopes,
         issued_at_utc=iso_utc_now(),
     )
 
     export = {
         "base_url": creds.base_url,
-        "user_api_key": creds.user_api_key,  # SECRET
+        "user_api_key": creds.user_api_key,
         "user_api_client_id": creds.user_api_client_id,
         "scopes_requested": creds.scopes_requested,
         "issued_at_utc": creds.issued_at_utc,
@@ -259,22 +280,28 @@ def main(argv: Optional[list[str]] = None) -> int:
     }
 
     save_json(args.out, export)
+    if args.env_out:
+        save_env(args.env_out, creds)
 
-    # Clear text output (explicit, as requested)
-    print("✅ CONNECTED — save these values for your AI agent:\n")
+    print("CONNECTED - credentials saved for your AI agent:\n")
     print(f"Base URL:          {creds.base_url}")
-    print(f"User API Key:      {creds.user_api_key}")
+    if args.print_secrets:
+        print(f"User API Key:      {creds.user_api_key}")
+    else:
+        print("User API Key:      <hidden; use --print-secrets only in a private terminal>")
     print(f"Client ID:         {creds.user_api_client_id}")
     print(f"Scopes requested:  {creds.scopes_requested}")
     print(f"Issued (UTC):      {creds.issued_at_utc}")
     print(f"Saved to file:     {args.out}")
-    print("\n🔒 SECURITY RULE: Never share your User API Key. Treat it like a password.\n")
+    if args.env_out:
+        print(f"Saved env file:    {args.env_out}")
+    print("\nSECURITY RULE: Never share your User API Key. Treat it like a password.\n")
 
     if not args.no_example:
         try:
             example_read_latest(creds, limit=10)
         except Exception as e:
-            print(f"\n⚠️ Example request failed: {e}")
+            print(f"\nExample request failed: {e}")
 
     return 0
 

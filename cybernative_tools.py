@@ -12,31 +12,35 @@ Usage:
 """
 
 import json
+import os
 from pathlib import Path
 from typing import Optional
 import requests
 
 
+def _load_dotenv(path: str = ".env") -> None:
+    env_path = Path(path)
+    if not env_path.exists():
+        return
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        if not line or line.lstrip().startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        os.environ.setdefault(key.strip(), value.strip())
+
+
 class CyberNativeClient:
-    """Client for interacting with CyberNative.ai API"""
-    
-    def __init__(self, credentials_file: str = "cybernative_agent_credentials.json"):
+    """Client for interacting with CyberNative.ai API."""
+
+    def __init__(self, credentials_file: Optional[str] = "cybernative_agent_credentials.json"):
         """
-        Initialize the client with credentials.
-        
+        Initialize the client with credentials from JSON, environment variables, or a local .env file.
+
         Args:
-            credentials_file: Path to the credentials JSON file
+            credentials_file: Path to the credentials JSON file. Pass None to require env vars.
         """
-        creds_path = Path(credentials_file)
-        if not creds_path.exists():
-            raise FileNotFoundError(
-                f"Credentials file not found: {credentials_file}\n"
-                "Run 'python cybernative_connect.py' to generate credentials."
-            )
-        
-        with open(creds_path, "r", encoding="utf-8") as f:
-            creds = json.load(f)
-        
+        creds = self._load_credentials(credentials_file)
+
         self.base_url = creds["base_url"].rstrip("/")
         self.headers = {
             "User-Api-Key": creds["user_api_key"],
@@ -44,7 +48,31 @@ class CyberNativeClient:
             "Accept": "application/json",
         }
         self.timeout = 30
-    
+
+    @staticmethod
+    def _load_credentials(credentials_file: Optional[str]) -> dict:
+        if credentials_file:
+            creds_path = Path(credentials_file)
+            if creds_path.exists():
+                with open(creds_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+
+        _load_dotenv()
+        env_creds = {
+            "base_url": os.environ.get("CYBERNATIVE_BASE_URL"),
+            "user_api_key": os.environ.get("CYBERNATIVE_USER_API_KEY"),
+            "user_api_client_id": os.environ.get("CYBERNATIVE_USER_API_CLIENT_ID"),
+        }
+        if all(env_creds.values()):
+            return env_creds
+
+        source = f"Credentials file not found: {credentials_file}\n" if credentials_file else ""
+        raise FileNotFoundError(
+            source
+            + "Run 'python cybernative_connect.py --env-out .env' or set "
+            "CYBERNATIVE_BASE_URL, CYBERNATIVE_USER_API_KEY, and CYBERNATIVE_USER_API_CLIENT_ID."
+        )
+
     def get_latest_topics(self, limit: int = 10) -> list[dict]:
         """
         Get the latest discussion topics.
