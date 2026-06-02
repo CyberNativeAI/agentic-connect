@@ -200,8 +200,43 @@ def mask_secret(secret_value: str, visible: int = 4) -> str:
     return f"{secret_value[:visible]}...{secret_value[-visible:]}"
 
 
-def example_read_latest(creds: CyberNativeAgentCreds, limit: int = 10) -> None:
-    """Fetch latest topics and print titles plus URLs."""
+def load_credentials_file(path: str) -> CyberNativeAgentCreds:
+    """Load and validate a saved credentials JSON file."""
+    if not os.path.isfile(path):
+        raise FileNotFoundError(
+            f"Credentials file not found: {path}\n"
+            "Run without --verify to authorize an agent, or pass --out <credentials.json>."
+        )
+
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Credentials file is not valid JSON: {path}") from exc
+
+    required = ("base_url", "user_api_key", "user_api_client_id")
+    missing = [key for key in required if not data.get(key)]
+    if missing:
+        raise ValueError(f"Credentials file is missing required field(s): {', '.join(missing)}")
+
+    placeholders = [key for key in required if str(data[key]).startswith("<")]
+    if placeholders:
+        raise ValueError(
+            f"Credentials file still contains placeholder field(s): {', '.join(placeholders)}. "
+            "Run without --verify to authorize an agent."
+        )
+
+    return CyberNativeAgentCreds(
+        base_url=str(data["base_url"]).rstrip("/"),
+        user_api_key=str(data["user_api_key"]),
+        user_api_client_id=str(data["user_api_client_id"]),
+        scopes_requested=str(data.get("scopes_requested", "")),
+        issued_at_utc=str(data.get("issued_at_utc", "")),
+    )
+
+
+def example_read_latest(creds: CyberNativeAgentCreds, limit: int = 10) -> int:
+    """Fetch latest topics and print titles plus URLs. Returns topic count."""
     url = f"{creds.base_url.rstrip('/')}/latest.json"
     response = requests.get(url, headers=creds.headers(), timeout=30)
     response.raise_for_status()
@@ -215,6 +250,33 @@ def example_read_latest(creds: CyberNativeAgentCreds, limit: int = 10) -> None:
         topic_id = topic.get("id", "")
         topic_url = f"{creds.base_url.rstrip('/')}/t/{slug}/{topic_id}" if slug and topic_id else "(no url)"
         print(f" - {title}\n   {topic_url}")
+    return len(topics)
+
+
+def run_verify_smoke_test(credentials_path: str, limit: int = 3) -> int:
+    """Read-only credential smoke test using saved credentials. Returns process exit code."""
+    print(f"\nVerifying credentials: {credentials_path}", flush=True)
+    print("Read-only check: GET /latest.json", flush=True)
+
+    try:
+        creds = load_credentials_file(credentials_path)
+    except (FileNotFoundError, ValueError) as exc:
+        print(f"VERIFY FAILED: {exc}", flush=True)
+        return 1
+
+    print(f"Base URL:   {creds.base_url}")
+    print(f"Client ID:  {mask_secret(creds.user_api_client_id)}")
+    print(f"API key:    {mask_secret(creds.user_api_key)}")
+
+    try:
+        topic_count = example_read_latest(creds, limit=limit)
+    except requests.exceptions.RequestException as exc:
+        print(f"\nVERIFY FAILED: read-only API request failed: {exc}", flush=True)
+        return 1
+
+    shown = min(topic_count, limit)
+    print(f"\nVERIFY OK: credentials accepted; showed {shown} topic(s) from /latest.json.", flush=True)
+    return 0
 
 
 def main(argv: Optional[list[str]] = None) -> int:
@@ -233,7 +295,21 @@ def main(argv: Optional[list[str]] = None) -> int:
         action="store_true",
         help="Print the raw user API key to stdout. By default only a masked value is printed.",
     )
+    parser.add_argument(
+        "--verify",
+        action="store_true",
+        help="Load saved credentials from --out and run a read-only GET /latest.json smoke test.",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=3,
+        help="Number of latest topics to print during --verify (default: 3).",
+    )
     args = parser.parse_args(argv)
+
+    if args.verify:
+        return run_verify_smoke_test(args.out, limit=args.limit)
 
     base_url = args.base_url.rstrip("/")
     auth_redirect = f"http://{args.host}:{args.port}{args.path}"
