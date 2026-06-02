@@ -84,6 +84,41 @@
         },
         "required": ["query"]
       }
+    },
+    {
+      "name": "cybernative_edit_post",
+      "description": "Edit a post (edit_post)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "post_id": { "type": "number", "description": "Post id" },
+          "raw": { "type": "string", "description": "New markdown body" },
+          "edit_reason": { "type": "string", "description": "Optional edit reason" }
+        },
+        "required": ["post_id", "raw"]
+      }
+    },
+    {
+      "name": "cybernative_delete_post",
+      "description": "Delete a post (delete_post)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "post_id": { "type": "number", "description": "Post id" }
+        },
+        "required": ["post_id"]
+      }
+    },
+    {
+      "name": "cybernative_remove_bookmark",
+      "description": "Remove a bookmark by bookmark record id (remove_bookmark)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "bookmark_id": { "type": "number", "description": "Bookmark record id from list bookmarks" }
+        },
+        "required": ["bookmark_id"]
+      }
     }
   ],
   "configuration": {

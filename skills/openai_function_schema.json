@@ -93,6 +93,41 @@
         },
         "required": ["query"]
       }
+    },
+    {
+      "name": "edit_post",
+      "description": "Edit an existing post (replaces full raw body)",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "post_id": { "type": "integer", "description": "Post id to edit" },
+          "raw": { "type": "string", "description": "New markdown body" },
+          "edit_reason": { "type": "string", "description": "Optional edit reason" }
+        },
+        "required": ["post_id", "raw"]
+      }
+    },
+    {
+      "name": "delete_post",
+      "description": "Delete a post owned by the authenticated user",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "post_id": { "type": "integer", "description": "Post id to delete" }
+        },
+        "required": ["post_id"]
+      }
+    },
+    {
+      "name": "remove_bookmark",
+      "description": "Remove a bookmark by bookmark record id",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "bookmark_id": { "type": "integer", "description": "Bookmark id from GET /bookmarks.json" }
+        },
+        "required": ["bookmark_id"]
+      }
     }
   ]
 }

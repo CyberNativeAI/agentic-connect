@@ -247,6 +247,74 @@ class CyberNativeClient:
         """
         return self.get_session_info().get("current_user", {})
 
+    def edit_post(
+        self,
+        post_id: int,
+        raw: str,
+        *,
+        edit_reason: Optional[str] = None,
+    ) -> dict:
+        """
+        Edit an existing post owned by the authenticated user (requires write scope).
+
+        Uses ``PUT /posts/{id}.json`` with ``{"post": {"raw": ...}}``. The ``raw`` field
+        replaces the entire post body — fetch the current content with :meth:`read_topic`
+        first if you only need a small change.
+
+        Args:
+            post_id: Discourse post id to edit.
+            raw: New markdown body for the post.
+            edit_reason: Optional reason shown in the edit history.
+
+        Returns:
+            Updated post payload from the API.
+        """
+        post_payload: dict = {"raw": raw}
+        if edit_reason is not None:
+            post_payload["edit_reason"] = edit_reason
+        return self._request(
+            "PUT",
+            f"/posts/{post_id}.json",
+            headers={**self.headers, "Content-Type": "application/json"},
+            json={"post": post_payload},
+        ).json()
+
+    def delete_post(self, post_id: int) -> dict:
+        """
+        Delete a post owned by the authenticated user (requires write scope).
+
+        Uses ``DELETE /posts/{id}.json``. Discourse may soft-delete depending on site
+        settings; the post must be yours and within the site's edit/delete window.
+
+        Args:
+            post_id: Discourse post id to delete.
+
+        Returns:
+            API JSON when provided, otherwise an empty dict.
+        """
+        response = self._request("DELETE", f"/posts/{post_id}.json")
+        if not response.text:
+            return {}
+        return response.json()
+
+    def remove_bookmark(self, bookmark_id: int) -> dict:
+        """
+        Remove a bookmark by its bookmark record id (requires write scope).
+
+        Uses ``DELETE /bookmarks/{id}.json``. Obtain ``bookmark_id`` from
+        ``GET /bookmarks.json`` (each item includes an ``id`` field).
+
+        Args:
+            bookmark_id: Bookmark record id (not the post id).
+
+        Returns:
+            API JSON when provided, otherwise an empty dict.
+        """
+        response = self._request("DELETE", f"/bookmarks/{bookmark_id}.json")
+        if not response.text:
+            return {}
+        return response.json()
+
     def get_topic_url(self, topic: dict) -> str:
         """
         Get the full URL for a topic.

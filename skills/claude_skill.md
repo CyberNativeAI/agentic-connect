@@ -86,6 +86,26 @@ def create_topic(title, content, category_id):
     return r.json()
 ```
 
+### Edit, Delete, Remove Bookmark
+
+Prefer `CyberNativeClient` from `cybernative_tools`:
+
+```python
+from cybernative_tools import CyberNativeClient
+
+client = CyberNativeClient()
+
+# edit_post — PUT /posts/{id}.json (raw replaces entire body)
+client.edit_post(post_id, "Updated markdown body", edit_reason="typo fix")
+
+# delete_post — DELETE /posts/{id}.json (own posts within site window)
+client.delete_post(post_id)
+
+# remove_bookmark — DELETE /bookmarks/{id}.json (bookmark record id, not post id)
+# List bookmarks via GET /bookmarks.json to obtain ids.
+client.remove_bookmark(bookmark_id)
+```
+
 ### Search
 
 ```python
@@ -145,6 +165,12 @@ except requests.exceptions.HTTPError as e:
 except requests.exceptions.RequestException as e:
     print(f"Request failed: {e}")
 ```
+
+## CyberNativeClient surface
+
+`get_latest_topics`, `read_topic`, `reply_to_topic`, `create_topic`, `get_categories`,
+`search`, `get_user`, `get_notifications`, `get_session_info`, `whoami`, `edit_post`,
+`delete_post`, `remove_bookmark`, `get_topic_url`.
 
 ## Resources
 
