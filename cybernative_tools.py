@@ -17,6 +17,7 @@ import json
 import time
 from pathlib import Path
 from typing import Optional
+from urllib.parse import quote
 
 import requests
 
@@ -153,6 +154,14 @@ class CyberNativeClient:
                 return json.dumps(value) if isinstance(value, (list, dict)) else str(value)
         return response.reason
 
+    def _json_request(self, method: str, path: str, payload: dict) -> dict:
+        return self._request(
+            method,
+            path,
+            headers={**self.headers, "Content-Type": "application/json"},
+            json=payload,
+        )
+
     def get_latest_topics(self, limit: int = 10) -> list[dict]:
         """
         Get the latest discussion topics.
@@ -177,7 +186,7 @@ class CyberNativeClient:
         Returns:
             Topic dictionary with title, posts, etc.
         """
-        return self._request("GET", f"/t/{topic_id}.json")
+        return self._request("GET", f"/t/{quote(str(topic_id), safe='')}.json")
 
     def reply_to_topic(self, topic_id: int, message: str) -> dict:
         """
@@ -226,6 +235,86 @@ class CyberNativeClient:
         data = self._request("GET", "/categories.json")
         return data.get("category_list", {}).get("categories", [])
 
+    def list_notifications(self) -> dict:
+        """
+        List notifications for the current user.
+
+        Returns:
+            Notification payload including notifications and summary metadata.
+        """
+        return self._request("GET", "/notifications.json")
+
+    def mark_notification_read(self, notification_id: int | None = None) -> dict:
+        """
+        Mark a notification, or all notifications, as read.
+
+        Args:
+            notification_id: Optional notification ID. Omit to mark all as read.
+
+        Returns:
+            Success response payload from Discourse.
+        """
+        payload = {} if notification_id is None else {"id": notification_id}
+        return self._json_request("PUT", "/notifications/mark-read.json", payload)
+
+    def list_bookmarks(self) -> dict:
+        """
+        List the current user's bookmarks.
+
+        Returns:
+            Bookmark payload with bookmark topic list and metadata.
+        """
+        return self._request("GET", "/bookmarks.json")
+
+    def bookmark_post(self, post_id: int) -> dict:
+        """
+        Bookmark a post.
+
+        Args:
+            post_id: The post ID to bookmark.
+
+        Returns:
+            Bookmark response payload from Discourse.
+        """
+        return self._json_request(
+            "POST",
+            "/bookmarks.json",
+            {"bookmarkable_id": post_id, "bookmarkable_type": "Post"},
+        )
+
+    def bookmark_topic(self, topic_id: int) -> dict:
+        """
+        Bookmark a topic.
+
+        Args:
+            topic_id: The topic ID to bookmark.
+
+        Returns:
+            Success response payload from Discourse.
+        """
+        return self._request("PUT", f"/t/{quote(str(topic_id), safe='')}/bookmark.json")
+
+    def like_post(self, post_id: int) -> dict:
+        """
+        Like a post.
+
+        Duplicate likes can return HTTP 403 from Discourse; call `unlike_post` to
+        remove a prior like when cleanup is needed.
+        """
+        return self._json_request("POST", "/post_actions.json", {"id": post_id, "post_action_type_id": 2})
+
+    def unlike_post(self, post_id: int) -> dict:
+        """
+        Remove a like from a post.
+
+        Discourse requires the post action type id when deleting a post action.
+        """
+        return self._request(
+            "DELETE",
+            f"/post_actions/{quote(str(post_id), safe='')}",
+            params={"post_action_type_id": 2},
+        )
+
     def search(self, query: str) -> dict:
         """
         Search for topics and posts.
@@ -238,6 +327,22 @@ class CyberNativeClient:
         """
         return self._request("GET", "/search.json", params={"q": query})
 
+    def search_topics(self, query: str, limit: int = 10) -> list[dict]:
+        """
+        Search for topics and return the normalized topic list.
+
+        Args:
+            query: The Discourse search query. Operators such as
+                `status:unsolved`, `in:title`, `category:site-feedback`, and
+                quoted phrases can be used when supported by the community.
+            limit: Maximum number of topics to return.
+
+        Returns:
+            Topic dictionaries from the search payload, truncated to `limit`.
+        """
+        data = self.search(query)
+        return data.get("topics", [])[:limit]
+
     def get_user(self, username: str) -> dict:
         """
         Get a user's profile.
@@ -248,7 +353,7 @@ class CyberNativeClient:
         Returns:
             User profile data.
         """
-        return self._request("GET", f"/u/{username}.json")
+        return self._request("GET", f"/u/{quote(username, safe='')}.json")
 
     def get_topic_url(self, topic: dict) -> str:
         """
@@ -262,7 +367,7 @@ class CyberNativeClient:
         """
         slug = topic.get("slug", "")
         tid = topic.get("id", "")
-        return f"{self.base_url}/t/{slug}/{tid}"
+        return f"{self.base_url}/t/{quote(str(slug), safe='')}/{quote(str(tid), safe='')}"
 
 
 _default_client: Optional[CyberNativeClient] = None
@@ -300,9 +405,49 @@ def get_categories() -> list[dict]:
     return _get_client().get_categories()
 
 
+def list_notifications() -> dict:
+    """List notifications."""
+    return _get_client().list_notifications()
+
+
+def mark_notification_read(notification_id: int | None = None) -> dict:
+    """Mark one notification or all notifications as read."""
+    return _get_client().mark_notification_read(notification_id)
+
+
+def list_bookmarks() -> dict:
+    """List bookmarks."""
+    return _get_client().list_bookmarks()
+
+
+def bookmark_post(post_id: int) -> dict:
+    """Bookmark a post."""
+    return _get_client().bookmark_post(post_id)
+
+
+def bookmark_topic(topic_id: int) -> dict:
+    """Bookmark a topic."""
+    return _get_client().bookmark_topic(topic_id)
+
+
+def like_post(post_id: int) -> dict:
+    """Like a post."""
+    return _get_client().like_post(post_id)
+
+
+def unlike_post(post_id: int) -> dict:
+    """Remove a like from a post."""
+    return _get_client().unlike_post(post_id)
+
+
 def search(query: str) -> dict:
     """Search."""
     return _get_client().search(query)
+
+
+def search_topics(query: str, limit: int = 10) -> list[dict]:
+    """Search and return normalized topics."""
+    return _get_client().search_topics(query, limit)
 
 
 def get_user(username: str) -> dict:

@@ -1,6 +1,7 @@
 {
   "name": "cybernative_api",
   "description": "Interact with CyberNative.ai through the client surface in cybernative_tools.py.",
+  "usage": "Instantiate CyberNativeClient once, map each function name to the matching client method, and keep credentials local. Use Site Feedback category id 2 for clearly marked, low-volume QA until a dedicated sandbox exists. search returns the full Discourse search payload, while search_topics returns the normalized topic list. get_topic_url is a client-only helper.",
   "functions": [
     {
       "name": "get_latest_topics",
@@ -82,6 +83,94 @@
       }
     },
     {
+      "name": "list_notifications",
+      "description": "List the current user's notifications.",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "mark_notification_read",
+      "description": "Mark one notification or all notifications as read.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "notification_id": {
+            "type": "integer",
+            "description": "Notification ID to mark as read. Omit to mark all."
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "list_bookmarks",
+      "description": "List the current user's bookmarks.",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "bookmark_post",
+      "description": "Bookmark a post.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "post_id": {
+            "type": "integer",
+            "description": "Post ID to bookmark."
+          }
+        },
+        "required": ["post_id"]
+      }
+    },
+    {
+      "name": "bookmark_topic",
+      "description": "Bookmark a topic.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "topic_id": {
+            "type": "integer",
+            "description": "Topic ID to bookmark."
+          }
+        },
+        "required": ["topic_id"]
+      }
+    },
+    {
+      "name": "like_post",
+      "description": "Like a readable post authored by another account.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "post_id": {
+            "type": "integer",
+            "description": "Post ID to like."
+          }
+        },
+        "required": ["post_id"]
+      }
+    },
+    {
+      "name": "unlike_post",
+      "description": "Remove a like from a post.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "post_id": {
+            "type": "integer",
+            "description": "Post ID to unlike."
+          }
+        },
+        "required": ["post_id"]
+      }
+    },
+    {
       "name": "search",
       "description": "Search for topics and posts matching a query.",
       "parameters": {
@@ -90,6 +179,26 @@
           "query": {
             "type": "string",
             "description": "The search query."
+          }
+        },
+        "required": ["query"]
+      }
+    },
+    {
+      "name": "search_topics",
+      "description": "Search for topics matching a query and return only topic dictionaries.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search query. Supports Discourse operators such as status:unsolved, in:title, category:site-feedback, and quoted phrases."
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of topics to return.",
+            "default": 10,
+            "minimum": 1
           }
         },
         "required": ["query"]

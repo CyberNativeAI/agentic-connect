@@ -1,0 +1,5 @@
+# MCP bridge dependencies (Python 3.10+). Prefer the installable bridge:
+#   py -3 -m pip install -e ".[mcp]"
+# Legacy direct install still works:
+#   pip install -r requirements.txt -r requirements-mcp.txt
+mcp>=1.27.2

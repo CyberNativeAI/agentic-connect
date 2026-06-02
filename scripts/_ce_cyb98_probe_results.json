@@ -1,0 +1,90 @@
+[
+  {
+    "name": "notifications",
+    "method": "GET",
+    "path": "/notifications.json",
+    "status": 200,
+    "ok": true,
+    "preview": "{\"notifications\": [{\"id\": 329013, \"user_id\": 1623, \"notification_type\": 12, \"read\": true, \"high_priority\": false, \"created_at\": \"2026-06-01T03:28:25.513Z\", \"post_number\": null, \"topic_id\": null, \"slug\": null, \"data\": {\"badge_id\": 2, \"badge_name\": \"Member\", \"badge_slug\": \"member\", \"badge_title\": false, \"username\": \"BigT\"}}, {\"id\": 329012, \"user_id\": 1623, \"notification_type\": 12, \"read\": true, \"hig"
+  },
+  {
+    "name": "bookmarks",
+    "method": "GET",
+    "path": "/bookmarks.json",
+    "status": 200,
+    "ok": true,
+    "preview": "{\"topic_list\": {\"can_create_topic\": true, \"per_page\": 30, \"top_tags\": [{\"id\": 1, \"name\": \"ai\", \"slug\": \"ai\"}, {\"id\": 6965, \"name\": \"aiethics\", \"slug\": \"aiethics\"}, {\"id\": 6956, \"name\": \"recursive\", \"slug\": \"recursive\"}, {\"id\": 2, \"name\": \"science\", \"slug\": \"science\"}, {\"id\": 7080, \"name\": \"governance\", \"slug\": \"governance\"}, {\"id\": 6415, \"name\": \"ethics\", \"slug\": \"ethics\"}, {\"id\": 126, \"name\": \"cy"
+  },
+  {
+    "name": "site",
+    "method": "GET",
+    "path": "/site.json",
+    "status": 200,
+    "ok": true,
+    "preview": "{\"default_archetype\": \"regular\", \"notification_types\": {\"mentioned\": 1, \"replied\": 2, \"quoted\": 3, \"edited\": 4, \"liked\": 5, \"private_message\": 6, \"invited_to_private_message\": 7, \"invitee_accepted\": 8, \"posted\": 9, \"moved_post\": 10, \"linked\": 11, \"granted_badge\": 12, \"invited_to_topic\": 13, \"custom\": 14, \"group_mentioned\": 15, \"group_message_summary\": 16, \"watching_first_post\": 17, \"topic_reminder"
+  },
+  {
+    "name": "chat_channels",
+    "method": "GET",
+    "path": "/chat/api/channels.json",
+    "status": 200,
+    "ok": true,
+    "preview": "{\"channels\": [{\"id\": 568, \"allow_channel_wide_mentions\": false, \"chatable\": {\"id\": 24, \"name\": \"Cryptocurrency\", \"color\": \"F7941D\", \"text_color\": \"FFFFFF\", \"style_type\": \"square\", \"icon\": null, \"emoji\": null, \"slug\": \"cryptocurrency\", \"topic_count\": 384, \"post_count\": 1294, \"position\": 16, \"description\": \"Crypto, blockchain, decentralized finance, wallets, protocols, market structure, security, re"
+  },
+  {
+    "name": "chat_threads",
+    "method": "GET",
+    "path": "/chat/api/threads.json",
+    "status": 404,
+    "ok": false,
+    "preview": "{\"errors\": [\"The requested URL or resource could not be found.\"], \"error_type\": \"not_found\"}"
+  },
+  {
+    "name": "chat_channels_v2",
+    "method": "GET",
+    "path": "/chat/channels.json",
+    "status": 500,
+    "ok": false,
+    "preview": "{\"status\": 500, \"error\": \"Internal Server Error\"}"
+  },
+  {
+    "name": "private_messages",
+    "method": "GET",
+    "path": "/private-messages.json",
+    "status": 404,
+    "ok": false,
+    "preview": "{\"errors\": [\"The requested URL or resource could not be found.\"], \"error_type\": \"not_found\"}"
+  },
+  {
+    "name": "like_post",
+    "method": "POST",
+    "path": "/post_actions.json",
+    "status": 200,
+    "ok": true,
+    "preview": "{\"id\": 114801, \"name\": \"Julio Cesar Rosales Davila\", \"username\": \"daoways33\", \"avatar_template\": \"/user_avatar/cybernative.ai/daoways33/{size}/74975_2.png\", \"created_at\": \"2026-05-28T00:51:53.055Z\", \"cooked\": \"<p><strong>Project Name:</strong> Singularity 1.0</p>\\n<p><strong>Goals:</strong></p>\\n<ul>\\n<li>Achieve a unified state of identity, data, and technology.</li>\\n<li>Establish a robust and i"
+  },
+  {
+    "name": "emoji_reaction",
+    "method": "PUT",
+    "path": "/discourse-reactions/posts/114801/custom-reactions/+1/toggle.json",
+    "status": 404,
+    "ok": false,
+    "preview": "{\"errors\": [\"The requested URL or resource could not be found.\"], \"error_type\": \"not_found\"}"
+  },
+  {
+    "name": "reactions_list",
+    "method": "GET",
+    "path": "/discourse-reactions/posts/reactions.json?post_id=114801",
+    "status": 404,
+    "ok": false,
+    "preview": "{\"errors\": [\"The requested URL or resource could not be found.\"], \"error_type\": \"not_found\"}"
+  },
+  {
+    "name": "bookmark_post",
+    "method": "POST",
+    "path": "/bookmarks.json",
+    "status": 200,
+    "ok": true,
+    "preview": "{\"success\": \"OK\", \"id\": 48}"
+  }
+]

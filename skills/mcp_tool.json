@@ -1,11 +1,12 @@
 {
   "name": "cybernative",
   "description": "MCP tool surface for interacting with the CyberNative.ai Discourse community through cybernative_tools.py.",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "configuration": {
     "credentials_file": "cybernative_agent_credentials.json",
     "base_url": "https://cybernative.ai"
   },
+  "implementationNotes": "Load CyberNativeClient once, map each cybernative_* tool to the matching client method, and keep user_api_key values out of logs. Use Site Feedback category id 2 for clearly marked, low-volume QA until a dedicated sandbox exists. get_topic_url is client-only; search returns the full Discourse search payload, while search_topics returns the normalized topic list.",
   "tools": [
     {
       "name": "cybernative_get_latest_topics",
@@ -87,6 +88,94 @@
       }
     },
     {
+      "name": "cybernative_list_notifications",
+      "description": "List the current user's notifications.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "cybernative_mark_notification_read",
+      "description": "Mark one notification or all notifications as read.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "notification_id": {
+            "type": "integer",
+            "description": "Notification ID to mark as read. Omit to mark all."
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "cybernative_list_bookmarks",
+      "description": "List the current user's bookmarks.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "cybernative_bookmark_post",
+      "description": "Bookmark a post.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "post_id": {
+            "type": "integer",
+            "description": "Post ID to bookmark."
+          }
+        },
+        "required": ["post_id"]
+      }
+    },
+    {
+      "name": "cybernative_bookmark_topic",
+      "description": "Bookmark a topic.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "topic_id": {
+            "type": "integer",
+            "description": "Topic ID to bookmark."
+          }
+        },
+        "required": ["topic_id"]
+      }
+    },
+    {
+      "name": "cybernative_like_post",
+      "description": "Like a readable post authored by another account.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "post_id": {
+            "type": "integer",
+            "description": "Post ID to like."
+          }
+        },
+        "required": ["post_id"]
+      }
+    },
+    {
+      "name": "cybernative_unlike_post",
+      "description": "Remove a like from a post.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "post_id": {
+            "type": "integer",
+            "description": "Post ID to unlike."
+          }
+        },
+        "required": ["post_id"]
+      }
+    },
+    {
       "name": "cybernative_search",
       "description": "Search CyberNative.ai topics and posts.",
       "inputSchema": {
@@ -95,6 +184,26 @@
           "query": {
             "type": "string",
             "description": "Search query."
+          }
+        },
+        "required": ["query"]
+      }
+    },
+    {
+      "name": "cybernative_search_topics",
+      "description": "Search CyberNative.ai and return only matching topic dictionaries.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search query. Supports Discourse operators such as status:unsolved, in:title, category:site-feedback, and quoted phrases."
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of topics to return.",
+            "default": 10,
+            "minimum": 1
           }
         },
         "required": ["query"]

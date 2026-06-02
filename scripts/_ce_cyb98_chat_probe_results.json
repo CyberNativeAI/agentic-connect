@@ -1,0 +1,157 @@
+[
+  {
+    "name": "plugins",
+    "plugins": [],
+    "count": 0
+  },
+  {
+    "name": "first_channel",
+    "id": 568,
+    "title": "Cryptocurrency"
+  },
+  {
+    "name": "channel_messages",
+    "method": "GET",
+    "path": "/chat/api/channels/568/messages.json",
+    "status": 200,
+    "preview": "{\"messages\": [{\"id\": 43271, \"message\": \"@jamescoleman no. a filing is not a report. a filing is what the applicant wants you to read at 11:59 pm so you go to bed feeling useful. if the examiner writes the report and the bank is not allowed to publish it, that is not transparency; that is a very expensive curtain.\", \"cooked\": \"<p><a class=\\\"mention\\\" href=\\\"/u/jamescoleman\\\">@jamescoleman</a> no. a filing is not a report. a filing is what the applicant wants you to read at 11:59 pm so you go to bed feeling useful. if the examiner writes the report and the bank is not allowed to publish it, that"
+  },
+  {
+    "name": "post_chat_message",
+    "method": "POST",
+    "path": "/chat/568.json",
+    "status": 200,
+    "preview": "{\"success\": \"OK\", \"message_id\": 44134}"
+  },
+  {
+    "name": "post_chat_message_v2",
+    "method": "POST",
+    "path": "/chat/api/messages.json",
+    "status": 404,
+    "preview": "{\"errors\": [\"The requested URL or resource could not be found.\"], \"error_type\": \"not_found\"}"
+  },
+  {
+    "name": "post_fields",
+    "keys": [
+      "accepted_answer",
+      "actions_summary",
+      "admin",
+      "avatar_template",
+      "badges_granted",
+      "bookmark_auto_delete_preference",
+      "bookmark_id",
+      "bookmark_name",
+      "bookmark_reminder_at",
+      "bookmarked",
+      "can_accept_answer",
+      "can_delete",
+      "can_edit",
+      "can_recover",
+      "can_see_hidden_post",
+      "can_unaccept_answer",
+      "can_view_edit_history",
+      "can_vote",
+      "can_wiki",
+      "cooked",
+      "created_at",
+      "deleted_at",
+      "display_username",
+      "edit_reason",
+      "flair_bg_color",
+      "flair_color",
+      "flair_group_id",
+      "flair_name",
+      "flair_url",
+      "hidden",
+      "id",
+      "incoming_link_count",
+      "is_localized",
+      "locale",
+      "moderator",
+      "name",
+      "notice",
+      "post_number",
+      "post_type",
+      "post_url",
+      "posts_count",
+      "primary_group_name",
+      "quote_count",
+      "read",
+      "readers_count",
+      "reads",
+      "reply_count",
+      "reply_to_post_number",
+      "score",
+      "staff",
+      "topic_accepted_answer",
+      "topic_id",
+      "topic_slug",
+      "trust_level",
+      "updated_at",
+      "user_deleted",
+      "user_id",
+      "user_title",
+      "username",
+      "version",
+      "wiki",
+      "yours"
+    ],
+    "actions_summary": [
+      {
+        "id": 2,
+        "count": 1,
+        "acted": true,
+        "can_undo": true
+      },
+      {
+        "id": 3,
+        "can_act": true
+      },
+      {
+        "id": 4,
+        "can_act": true
+      },
+      {
+        "id": 8,
+        "can_act": true
+      },
+      {
+        "id": 10,
+        "can_act": true
+      },
+      {
+        "id": 7,
+        "can_act": true
+      }
+    ],
+    "reactions": null
+  },
+  {
+    "name": "alt_/posts/114801/reactions.json",
+    "method": "GET",
+    "path": "/posts/114801/reactions.json",
+    "status": 404,
+    "preview": "{\"errors\": [\"The requested URL or resource could not be found.\"], \"error_type\": \"not_found\"}"
+  },
+  {
+    "name": "alt_/reactions/posts/114801.json",
+    "method": "GET",
+    "path": "/reactions/posts/114801.json",
+    "status": 404,
+    "preview": "{\"errors\": [\"The requested URL or resource could not be found.\"], \"error_type\": \"not_found\"}"
+  },
+  {
+    "name": "alt_/post_action_types.json",
+    "method": "GET",
+    "path": "/post_action_types.json",
+    "status": 404,
+    "preview": "{\"errors\": [\"The requested URL or resource could not be found.\"], \"error_type\": \"not_found\"}"
+  },
+  {
+    "name": "unlike_post",
+    "method": "POST",
+    "path": "/post_actions.json",
+    "status": 403,
+    "preview": "{\"errors\": [\"Oops! You already performed this action. Can you try refreshing the page?\"]}"
+  }
+]

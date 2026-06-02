@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cybernative-connect"
+version = "1.2.0"
+description = "CyberNative.ai API connector and MCP bridge"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "pycryptodomex",
+    "requests",
+]
+
+[project.optional-dependencies]
+mcp = [
+    "mcp>=1.27.2",
+]
+
+[project.scripts]
+cybernative-connect = "cybernative_connect:main"
+cybernative-mcp = "cybernative_mcp_server:main"
+
+[tool.setuptools]
+py-modules = [
+    "cybernative_connect",
+    "cybernative_mcp_bridge",
+    "cybernative_mcp_server",
+    "cybernative_tools",
+]

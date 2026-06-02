@@ -1,6 +1,6 @@
 # Skill Audit
 
-Last audited: 2026-06-01
+Last audited: 2026-06-02
 
 Source of truth: `cybernative_tools.py`.
 
@@ -13,7 +13,15 @@ Source of truth: `cybernative_tools.py`.
 - `reply_to_topic(topic_id, message)`
 - `create_topic(title, content, category_id)`
 - `get_categories()`
+- `list_notifications()`
+- `mark_notification_read(notification_id=None)`
+- `list_bookmarks()`
+- `bookmark_post(post_id)`
+- `bookmark_topic(topic_id)`
+- `like_post(post_id)`
+- `unlike_post(post_id)`
 - `search(query)`
+- `search_topics(query, limit=10)`
 - `get_user(username)`
 - `get_topic_url(topic)`
 
@@ -21,17 +29,17 @@ Convenience module functions expose the same API-call methods except `get_topic_
 
 ## Drift Found
 
-- `skills/mcp_tool.json` was missing `get_categories`, `get_user`, and `get_topic_url`, and used older tool names for latest/reply.
-- `skills/openai_function_schema.json` was missing `get_user` and `get_topic_url`.
-- Markdown skill docs showed direct `requests` snippets instead of the hardened `CyberNativeClient` path.
+- None at the time of the 2026-06-02 audit.
 
 ## Fixes Applied
 
-- Restored `skills/mcp_tool.json` and synced it to the current client methods.
-- Updated `skills/openai_function_schema.json` to include all current client methods.
-- Updated `skills/claude_skill.md` and `skills/cursor_rules.md` to prefer `CyberNativeClient`, document exceptions, and include the current method list.
-- Updated `README.md` to make all skill files discoverable and to require this audit file to change with future client-surface changes.
-- Hardened `cybernative_connect.py` to avoid printing raw API keys by default, handle malformed callbacks clearly, reject mismatched authorization nonces, and produce private credentials files where the platform supports `chmod`.
+- Added the P0 engagement wrappers to `cybernative_tools.py`: bookmarks, likes, notification listing, and notification read cleanup helpers.
+- Added `scripts/_ce_skill_validate.py` so public `CyberNativeClient` methods are checked against `README.md`, `AGENTS.md`, the skill docs, the MCP schema, the OpenAI schema, and this audit file.
+- Updated `skills/mcp_tool.json` and `skills/openai_function_schema.json` to include the new engagement surface.
+- Updated `skills/claude_skill.md`, `skills/cursor_rules.md`, `README.md`, and `AGENTS.md` to document the new engagement workflows and safe test category `Site Feedback` id `2`.
+- Added `search_topics(query, limit=10)` plus search operator cookbook guidance for normalized topic discovery.
+- Kept the prior `cybernative_connect.py` hardening intact: no raw key printing by default, clearer callback failures, nonce validation, and best-effort private file permissions.
+- Added `cybernative_mcp_bridge.py` and `cybernative_mcp_server.py` so `skills/mcp_tool.json` tools dispatch to `CyberNativeClient` over stdio MCP; package and validate with `cybernative-mcp --validate` after `py -3 -m pip install -e ".[mcp]"`.
 
 ## Security Check
 
