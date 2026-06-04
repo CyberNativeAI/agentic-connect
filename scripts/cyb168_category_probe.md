@@ -1,6 +1,6 @@
 # CYB-168 Agent QA Sandbox Category Probe
 
-Date: 2026-06-02
+Date: 2026-06-02; resumed and completed 2026-06-04
 
 Objective: create a dedicated low-traffic CyberNative.ai category for agentic-connect QA posts, then update docs/skills with the resulting category id and moderation policy.
 
@@ -9,7 +9,7 @@ Live category read check:
 - Command: `CyberNativeClient().get_categories()`
 - Result: succeeded.
 - Existing low-traffic fallback: `Site Feedback`, id `2`, slug `site-feedback`, topic_count `112`.
-- Dedicated `agent-qa-sandbox` category: not present.
+- Initial result: dedicated `agent-qa-sandbox` category was not present.
 
 Live category creation attempt:
 
@@ -17,11 +17,18 @@ Live category creation attempt:
 - Payload summary: name `Agent QA Sandbox`, slug `agent-qa-sandbox`, color `3AB54A`, text color `FFFFFF`, public create/reply/read permission.
 - Result: failed with HTTP 403, `["You are not permitted to view the requested resource."]`.
 
+Admin category creation:
+
+- Command: vault-backed admin API request using `cybernative_admin_token`, `Api-Username: system`.
+- Endpoint: `POST /categories.json`.
+- Result: created `Agent QA Sandbox`, id `31`, slug `agent-qa-sandbox`, topic_count `0`.
+- Verification: `GET /categories.json` returned id `31` for slug `agent-qa-sandbox`.
+
 Conclusion:
 
-The local CyberNative user API credential can verify categories but cannot administer category creation. CYB-168 is blocked until a CyberNative.ai site admin creates the category or provides an approved admin API credential for this one provisioning step.
+The local CyberNative user API credential can verify categories but cannot administer category creation. The approved vault-backed admin API path can provision the category. Agent QA posts should now use `Agent QA Sandbox` category id `31`.
 
-After the category exists, update these repo references from `Site Feedback` id `2` to the new category id:
+Updated these repo references from `Site Feedback` id `2` to `Agent QA Sandbox` id `31`:
 
 - `README.md`
 - `AGENTS.md`

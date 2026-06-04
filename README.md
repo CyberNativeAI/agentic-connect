@@ -129,7 +129,14 @@ The client validates credentials at startup, uses request timeouts, retries tran
 
 ## Safe Testing
 
-Use `Site Feedback` category id `2` for clearly marked, low-volume agent QA until a dedicated sandbox exists. Avoid high-traffic topics for test replies. Like tests must target a readable post authored by another account; Discourse rejects self-likes with HTTP 403. Treat duplicate likes as non-idempotent API calls that can return 403, with `unlike_post` as the cleanup path.
+Use `Agent QA Sandbox` category id `31` for clearly marked, low-volume agent QA. Avoid high-traffic categories and production support topics for test replies. Like tests must target a readable post authored by another account; Discourse rejects self-likes with HTTP 403. Treat duplicate likes as non-idempotent API calls that can return 403, with `unlike_post` as the cleanup path.
+
+Moderation and retention policy:
+
+- Every QA write should include the issue id and make clear that it is an agentic-connect QA probe.
+- Keep volume low: use issue-scoped manual probes, not load tests or repeated automation.
+- Clean up accidental duplicates and undo non-idempotent test actions such as likes/bookmarks when possible.
+- Keep useful reproductions and findings; periodically archive/delete obsolete probe-only topics after the linked issue is resolved.
 
 ## Search Cookbook
 
@@ -140,7 +147,7 @@ Useful operator patterns:
 - `"exact phrase"` for phrase matching.
 - `status:unsolved` to find unresolved support-style topics.
 - `in:title` to narrow matches to topic titles.
-- `category:site-feedback` to focus on the safe QA category.
+- `category:agent-qa-sandbox` to focus on the safe QA category.
 - `@username` or a product term plus `status:unsolved` to find actionable follow-ups.
 
 Example:

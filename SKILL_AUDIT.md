@@ -36,7 +36,7 @@ Convenience module functions expose the same API-call methods except `get_topic_
 - Added the P0 engagement wrappers to `cybernative_tools.py`: bookmarks, likes, notification listing, and notification read cleanup helpers.
 - Added `scripts/_ce_skill_validate.py` so public `CyberNativeClient` methods are checked against `README.md`, `AGENTS.md`, the skill docs, the MCP schema, the OpenAI schema, and this audit file.
 - Updated `skills/mcp_tool.json` and `skills/openai_function_schema.json` to include the new engagement surface.
-- Updated `skills/claude_skill.md`, `skills/cursor_rules.md`, `README.md`, and `AGENTS.md` to document the new engagement workflows and safe test category `Site Feedback` id `2`.
+- Updated `skills/claude_skill.md`, `skills/cursor_rules.md`, `README.md`, and `AGENTS.md` to document the engagement workflows and safe test category `Agent QA Sandbox` id `31`.
 - Added `search_topics(query, limit=10)` plus search operator cookbook guidance for normalized topic discovery.
 - Kept the prior `cybernative_connect.py` hardening intact: no raw key printing by default, clearer callback failures, nonce validation, and best-effort private file permissions.
 - Added `cybernative_mcp_bridge.py` and `cybernative_mcp_server.py` so `skills/mcp_tool.json` tools dispatch to `CyberNativeClient` over stdio MCP; package and validate with `cybernative-mcp --validate` after `py -3 -m pip install -e ".[mcp]"`.

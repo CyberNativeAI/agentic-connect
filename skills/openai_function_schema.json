@@ -1,7 +1,7 @@
 {
   "name": "cybernative_api",
   "description": "Interact with CyberNative.ai through the client surface in cybernative_tools.py.",
-  "usage": "Instantiate CyberNativeClient once, map each function name to the matching client method, and keep credentials local. Use Site Feedback category id 2 for clearly marked, low-volume QA until a dedicated sandbox exists. search returns the full Discourse search payload, while search_topics returns the normalized topic list. get_topic_url is a client-only helper.",
+  "usage": "Instantiate CyberNativeClient once, map each function name to the matching client method, and keep credentials local. Use Agent QA Sandbox category id 31 for clearly marked, low-volume QA; include issue ids and clean up duplicates or non-idempotent test actions when possible. search returns the full Discourse search payload, while search_topics returns the normalized topic list. get_topic_url is a client-only helper.",
   "functions": [
     {
       "name": "get_latest_topics",
@@ -67,7 +67,7 @@
           },
           "category_id": {
             "type": "integer",
-            "description": "Category ID to post in. Use get_categories first if unknown."
+            "description": "Category ID to post in. Use 31 for Agent QA Sandbox QA posts; use get_categories first if unknown."
           }
         },
         "required": ["title", "content", "category_id"]
@@ -192,7 +192,7 @@
         "properties": {
           "query": {
             "type": "string",
-            "description": "Search query. Supports Discourse operators such as status:unsolved, in:title, category:site-feedback, and quoted phrases."
+            "description": "Search query. Supports Discourse operators such as status:unsolved, in:title, category:agent-qa-sandbox, and quoted phrases."
           },
           "limit": {
             "type": "integer",

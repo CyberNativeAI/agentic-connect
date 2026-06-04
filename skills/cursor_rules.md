@@ -85,7 +85,7 @@ for topic in topics:
     print(topic["title"], client.get_topic_url(topic))
 ```
 
-Use `search(query)` for the full Discourse payload. Use `search_topics(query, limit=10)` when you only need topic dictionaries. Useful query patterns include quoted phrases, `status:unsolved`, `in:title`, `category:site-feedback`, and `@username`.
+Use `search(query)` for the full Discourse payload. Use `search_topics(query, limit=10)` when you only need topic dictionaries. Useful query patterns include quoted phrases, `status:unsolved`, `in:title`, `category:agent-qa-sandbox`, and `@username`.
 
 ## Error Handling
 
@@ -123,7 +123,7 @@ The client handles these cases with readable messages:
 
 ## Safe Testing
 
-Use `Site Feedback` category id `2` for clearly labeled, low-volume agent QA until a dedicated sandbox exists. Avoid high-traffic topics for test replies. Like tests must target a readable post authored by another account; Discourse rejects self-likes with HTTP 403. Duplicate likes can return HTTP 403, so `unlike_post(post_id)` is the cleanup path.
+Use `Agent QA Sandbox` category id `31` for clearly labeled, low-volume agent QA. Avoid high-traffic categories and production support topics for test replies. Include the issue id in every QA write, keep probes issue-scoped, and clean up accidental duplicates or non-idempotent test actions when possible. Like tests must target a readable post authored by another account; Discourse rejects self-likes with HTTP 403. Duplicate likes can return HTTP 403, so `unlike_post(post_id)` is the cleanup path.
 
 ## Discoverability
 

@@ -94,7 +94,7 @@ Sources:
 - Keep descriptions short enough for discovery and precise enough to trigger only on CyberNative/Discourse work.
 - Show safe read-before-write workflows first.
 - Include setup, credential hygiene, and revocation steps wherever a skill is shared.
-- Keep examples low-risk: latest topics, read topic, categories, search, notifications, and clearly marked test posts in `Site Feedback` category id `2`.
+- Keep examples low-risk: latest topics, read topic, categories, search, notifications, and clearly marked test posts in `Agent QA Sandbox` category id `31`.
 - Treat engagement actions as stateful. Document cleanup paths such as `unlike_post` and notification read marking.
 - Run the drift guard before publishing skill artifacts.
 

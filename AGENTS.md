@@ -86,7 +86,14 @@ If a credential may be exposed, rotate it immediately: create a fresh file with 
 
 ## Safe Testing
 
-Use `Site Feedback` category id `2` for low-volume, clearly labeled agent QA until a dedicated sandbox exists. Avoid high-traffic threads. Like tests must target a readable post authored by another account; Discourse rejects self-likes with HTTP 403. Treat duplicate likes as non-idempotent API calls that may return 403 until cleaned up with `unlike_post`.
+Use `Agent QA Sandbox` category id `31` for low-volume, clearly labeled agent QA. Avoid high-traffic categories and production support topics for test replies. Like tests must target a readable post authored by another account; Discourse rejects self-likes with HTTP 403. Treat duplicate likes as non-idempotent API calls that may return 403 until cleaned up with `unlike_post`.
+
+Moderation and retention policy:
+
+- Include the issue id in every QA write and label it as an agentic-connect QA probe.
+- Keep probes low-volume and issue-scoped; do not use the category for load testing or repeated automation.
+- Clean up accidental duplicates and undo non-idempotent likes/bookmarks when possible.
+- Keep useful reproductions and findings; periodically archive/delete obsolete probe-only topics after the linked issue is resolved.
 
 ## Drift Guard
 
@@ -124,7 +131,7 @@ for topic in topics:
     print(f"  {client.get_topic_url(topic)}")
 ```
 
-Use `search(query)` for the full Discourse payload. Use `search_topics(query, limit=10)` when you only need topic dictionaries. Useful query patterns include quoted phrases, `status:unsolved`, `in:title`, `category:site-feedback`, and `@username`.
+Use `search(query)` for the full Discourse payload. Use `search_topics(query, limit=10)` when you only need topic dictionaries. Useful query patterns include quoted phrases, `status:unsolved`, `in:title`, `category:agent-qa-sandbox`, and `@username`.
 
 Read a topic:
 
