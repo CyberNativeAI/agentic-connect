@@ -1,0 +1,75 @@
+﻿2026-06-04T19:31:58.5682011Z ##[group]Run python -m unittest discover -s tests -v
+2026-06-04T19:31:58.5682422Z [36;1mpython -m unittest discover -s tests -v[0m
+2026-06-04T19:31:58.5700557Z shell: /usr/bin/bash -e {0}
+2026-06-04T19:31:58.5700829Z env:
+2026-06-04T19:31:58.5701151Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-06-04T19:31:58.5701582Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib/pkgconfig
+2026-06-04T19:31:58.5702001Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-06-04T19:31:58.5702376Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-06-04T19:31:58.5702745Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-06-04T19:31:58.5703119Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib
+2026-06-04T19:31:58.5703449Z ##[endgroup]
+2026-06-04T19:31:59.0606672Z test_cybernative_connect (unittest.loader._FailedTest.test_cybernative_connect) ... ERROR
+2026-06-04T19:31:59.0608081Z test_cybernative_mcp_bridge (unittest.loader._FailedTest.test_cybernative_mcp_bridge) ... ERROR
+2026-06-04T19:31:59.0609406Z test_cybernative_tools (unittest.loader._FailedTest.test_cybernative_tools) ... ERROR
+2026-06-04T19:31:59.0610023Z 
+2026-06-04T19:31:59.0610256Z ======================================================================
+2026-06-04T19:31:59.0611130Z ERROR: test_cybernative_connect (unittest.loader._FailedTest.test_cybernative_connect)
+2026-06-04T19:31:59.0612142Z ----------------------------------------------------------------------
+2026-06-04T19:31:59.0613022Z ImportError: Failed to import test module: test_cybernative_connect
+2026-06-04T19:31:59.0613690Z Traceback (most recent call last):
+2026-06-04T19:31:59.0620743Z   File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/unittest/loader.py", line 396, in _find_test_path
+2026-06-04T19:31:59.0621471Z     module = self._get_module_from_name(name)
+2026-06-04T19:31:59.0621814Z              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-04T19:31:59.0622472Z   File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/unittest/loader.py", line 339, in _get_module_from_name
+2026-06-04T19:31:59.0623127Z     __import__(name)
+2026-06-04T19:31:59.0623696Z   File "/home/runner/work/agentic-connect/agentic-connect/tests/test_cybernative_connect.py", line 7, in <module>
+2026-06-04T19:31:59.0624304Z     import cybernative_connect as connect
+2026-06-04T19:31:59.0624878Z   File "/home/runner/work/agentic-connect/agentic-connect/cybernative_connect.py", line 34, in <module>
+2026-06-04T19:31:59.0625433Z     import requests
+2026-06-04T19:31:59.0625739Z ModuleNotFoundError: No module named 'requests'
+2026-06-04T19:31:59.0625984Z 
+2026-06-04T19:31:59.0625993Z 
+2026-06-04T19:31:59.0626135Z ======================================================================
+2026-06-04T19:31:59.0627161Z ERROR: test_cybernative_mcp_bridge (unittest.loader._FailedTest.test_cybernative_mcp_bridge)
+2026-06-04T19:31:59.0627748Z ----------------------------------------------------------------------
+2026-06-04T19:31:59.0628246Z ImportError: Failed to import test module: test_cybernative_mcp_bridge
+2026-06-04T19:31:59.0628694Z Traceback (most recent call last):
+2026-06-04T19:31:59.0629295Z   File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/unittest/loader.py", line 396, in _find_test_path
+2026-06-04T19:31:59.0629881Z     module = self._get_module_from_name(name)
+2026-06-04T19:31:59.0630221Z              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-04T19:31:59.0630833Z   File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/unittest/loader.py", line 339, in _get_module_from_name
+2026-06-04T19:31:59.0631416Z     __import__(name)
+2026-06-04T19:31:59.0631986Z   File "/home/runner/work/agentic-connect/agentic-connect/tests/test_cybernative_mcp_bridge.py", line 7, in <module>
+2026-06-04T19:31:59.0632604Z     import cybernative_mcp_server
+2026-06-04T19:31:59.0633170Z   File "/home/runner/work/agentic-connect/agentic-connect/cybernative_mcp_server.py", line 11, in <module>
+2026-06-04T19:31:59.0633749Z     from cybernative_mcp_bridge import (
+2026-06-04T19:31:59.0634480Z   File "/home/runner/work/agentic-connect/agentic-connect/cybernative_mcp_bridge.py", line 11, in <module>
+2026-06-04T19:31:59.0635081Z     from cybernative_tools import CyberNativeClient
+2026-06-04T19:31:59.0635674Z   File "/home/runner/work/agentic-connect/agentic-connect/cybernative_tools.py", line 22, in <module>
+2026-06-04T19:31:59.0636355Z     import requests
+2026-06-04T19:31:59.0636655Z ModuleNotFoundError: No module named 'requests'
+2026-06-04T19:31:59.0636907Z 
+2026-06-04T19:31:59.0636915Z 
+2026-06-04T19:31:59.0637048Z ======================================================================
+2026-06-04T19:31:59.0637542Z ERROR: test_cybernative_tools (unittest.loader._FailedTest.test_cybernative_tools)
+2026-06-04T19:31:59.0638090Z ----------------------------------------------------------------------
+2026-06-04T19:31:59.0638570Z ImportError: Failed to import test module: test_cybernative_tools
+2026-06-04T19:31:59.0638990Z Traceback (most recent call last):
+2026-06-04T19:31:59.0639575Z   File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/unittest/loader.py", line 396, in _find_test_path
+2026-06-04T19:31:59.0640159Z     module = self._get_module_from_name(name)
+2026-06-04T19:31:59.0640480Z              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-04T19:31:59.0641081Z   File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/unittest/loader.py", line 339, in _get_module_from_name
+2026-06-04T19:31:59.0641785Z     __import__(name)
+2026-06-04T19:31:59.0642325Z   File "/home/runner/work/agentic-connect/agentic-connect/tests/test_cybernative_tools.py", line 7, in <module>
+2026-06-04T19:31:59.0642959Z     from cybernative_tools import CyberNativeClient
+2026-06-04T19:31:59.0643557Z   File "/home/runner/work/agentic-connect/agentic-connect/cybernative_tools.py", line 22, in <module>
+2026-06-04T19:31:59.0644089Z     import requests
+2026-06-04T19:31:59.0644380Z ModuleNotFoundError: No module named 'requests'
+2026-06-04T19:31:59.0644624Z 
+2026-06-04T19:31:59.0644631Z 
+2026-06-04T19:31:59.0644806Z ----------------------------------------------------------------------
+2026-06-04T19:31:59.0645185Z Ran 3 tests in 0.000s
+2026-06-04T19:31:59.0645346Z 
+2026-06-04T19:31:59.0645471Z FAILED (errors=3)
+2026-06-04T19:31:59.0778096Z ##[error]Process completed with exit code 1.

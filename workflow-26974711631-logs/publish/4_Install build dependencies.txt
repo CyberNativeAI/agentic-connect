@@ -1,0 +1,44 @@
+﻿2026-06-04T19:31:54.8161345Z ##[group]Run python -m pip install --upgrade build jsonschema
+2026-06-04T19:31:54.8162545Z [36;1mpython -m pip install --upgrade build jsonschema[0m
+2026-06-04T19:31:54.8197427Z shell: /usr/bin/bash -e {0}
+2026-06-04T19:31:54.8198256Z env:
+2026-06-04T19:31:54.8199064Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-06-04T19:31:54.8200107Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib/pkgconfig
+2026-06-04T19:31:54.8201225Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-06-04T19:31:54.8202211Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-06-04T19:31:54.8203173Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-06-04T19:31:54.8204133Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib
+2026-06-04T19:31:54.8204986Z ##[endgroup]
+2026-06-04T19:31:57.0897279Z Collecting build
+2026-06-04T19:31:57.2108550Z   Downloading build-1.5.0-py3-none-any.whl.metadata (5.7 kB)
+2026-06-04T19:31:57.2657563Z Collecting jsonschema
+2026-06-04T19:31:57.2864582Z   Downloading jsonschema-4.26.0-py3-none-any.whl.metadata (7.6 kB)
+2026-06-04T19:31:57.3226134Z Collecting packaging>=24.0 (from build)
+2026-06-04T19:31:57.3423954Z   Downloading packaging-26.2-py3-none-any.whl.metadata (3.5 kB)
+2026-06-04T19:31:57.3675875Z Collecting pyproject_hooks (from build)
+2026-06-04T19:31:57.3883882Z   Downloading pyproject_hooks-1.2.0-py3-none-any.whl.metadata (1.3 kB)
+2026-06-04T19:31:57.4178744Z Collecting attrs>=22.2.0 (from jsonschema)
+2026-06-04T19:31:57.4368463Z   Downloading attrs-26.1.0-py3-none-any.whl.metadata (8.8 kB)
+2026-06-04T19:31:57.4670438Z Collecting jsonschema-specifications>=2023.03.6 (from jsonschema)
+2026-06-04T19:31:57.4865992Z   Downloading jsonschema_specifications-2025.9.1-py3-none-any.whl.metadata (2.9 kB)
+2026-06-04T19:31:57.5238614Z Collecting referencing>=0.28.4 (from jsonschema)
+2026-06-04T19:31:57.5438624Z   Downloading referencing-0.37.0-py3-none-any.whl.metadata (2.8 kB)
+2026-06-04T19:31:57.8340389Z Collecting rpds-py>=0.25.0 (from jsonschema)
+2026-06-04T19:31:57.8569895Z   Downloading rpds_py-2026.5.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.1 kB)
+2026-06-04T19:31:57.8907757Z Collecting typing-extensions>=4.4.0 (from referencing>=0.28.4->jsonschema)
+2026-06-04T19:31:57.9138266Z   Downloading typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
+2026-06-04T19:31:57.9384685Z Downloading build-1.5.0-py3-none-any.whl (26 kB)
+2026-06-04T19:31:57.9677280Z Downloading jsonschema-4.26.0-py3-none-any.whl (90 kB)
+2026-06-04T19:31:58.0100200Z Downloading attrs-26.1.0-py3-none-any.whl (67 kB)
+2026-06-04T19:31:58.0361488Z Downloading jsonschema_specifications-2025.9.1-py3-none-any.whl (18 kB)
+2026-06-04T19:31:58.0619269Z Downloading packaging-26.2-py3-none-any.whl (100 kB)
+2026-06-04T19:31:58.0863651Z Downloading referencing-0.37.0-py3-none-any.whl (26 kB)
+2026-06-04T19:31:58.1084869Z Downloading rpds_py-2026.5.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (376 kB)
+2026-06-04T19:31:58.1656748Z Downloading typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+2026-06-04T19:31:58.1917934Z Downloading pyproject_hooks-1.2.0-py3-none-any.whl (10 kB)
+2026-06-04T19:31:58.2493893Z Installing collected packages: typing-extensions, rpds-py, pyproject_hooks, packaging, attrs, referencing, build, jsonschema-specifications, jsonschema
+2026-06-04T19:31:58.5018571Z 
+2026-06-04T19:31:58.5038027Z Successfully installed attrs-26.1.0 build-1.5.0 jsonschema-4.26.0 jsonschema-specifications-2025.9.1 packaging-26.2 pyproject_hooks-1.2.0 referencing-0.37.0 rpds-py-2026.5.1 typing-extensions-4.15.0
+2026-06-04T19:31:58.5046837Z 
+2026-06-04T19:31:58.5047878Z [notice] A new release of pip is available: 26.1.1 -> 26.1.2
+2026-06-04T19:31:58.5048854Z [notice] To update, run: pip install --upgrade pip
