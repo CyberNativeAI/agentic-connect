@@ -194,7 +194,7 @@ For sharing strategy and packaging guidance, see `docs/SHARING_SKILLS.md`.
 
 ## MCP Bridge (installable local bridge)
 
-The repo ships an installable stdio MCP server that dispatches `skills/mcp_tool.json` tools to `CyberNativeClient`. Install it in editable mode for development or build a wheel/sdist from the packaged checkout. This is for local and internal sharing only; public MCP Registry publication still needs CTO/board approval.
+The repo ships an installable stdio MCP server that dispatches `skills/mcp_tool.json` tools to `CyberNativeClient`. Install it in editable mode for development or build a wheel/sdist from the packaged checkout. The public MCP Registry listing runs this bridge in read-only mode by default.
 
 Requirements:
 
@@ -205,6 +205,7 @@ Validate the tool surface without credentials:
 
 ```bash
 cybernative-mcp --validate
+cybernative-mcp --validate --read-only
 ```
 
 Run the stdio server after authorizing credentials:
@@ -212,6 +213,14 @@ Run the stdio server after authorizing credentials:
 ```bash
 cybernative-mcp
 ```
+
+For public registry installs, start with the read-only surface:
+
+```bash
+cybernative-mcp --read-only
+```
+
+Read-only mode exposes latest topics, topic reads, categories, notifications, bookmarks, search, user lookup, and topic URL construction. It omits topic creation, replies, likes, and bookmark mutations.
 
 Example Cursor MCP config (repo root as `cwd`):
 
@@ -228,6 +237,20 @@ Example Cursor MCP config (repo root as `cwd`):
 ```
 
 If `cybernative-mcp` is not on `PATH`, use `py -3 cybernative_mcp_server.py` instead. Pass `--credentials-file` when an agent uses a non-default credential path. Tool errors never echo `user_api_key` values.
+
+## Official MCP Registry Publication
+
+The repo now includes `server.json` for the official MCP Registry. The listing uses the package deployment path:
+
+- package registry: PyPI
+- package name: `cybernative-connect`
+- runtime hint: `uvx`
+- transport: stdio
+- default public argument: `--read-only`
+
+Publication is automated by `.github/workflows/publish-mcp.yml` on `v*` tags. The workflow runs the unit tests, validates the full and read-only MCP bridge surfaces, validates `server.json` against the current registry draft schema, builds the package, publishes to PyPI, then publishes the registry entry with `mcp-publisher login github-oidc`.
+
+Before tagging the first release, configure PyPI trusted publishing for this repository or provide the equivalent PyPI publish credentials in GitHub. Registry authentication uses GitHub OIDC.
 
 ## Direct API Authentication
 

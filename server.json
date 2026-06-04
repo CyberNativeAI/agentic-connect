@@ -1,0 +1,43 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "io.github.CyberNativeAI/agentic-connect",
+  "title": "CyberNative.ai MCP Server",
+  "description": "Read CyberNative.ai topics, categories, users, notifications, bookmarks, and search results",
+  "websiteUrl": "https://cybernative.ai",
+  "repository": {
+    "url": "https://github.com/CyberNativeAI/agentic-connect",
+    "source": "github"
+  },
+  "version": "1.3.0",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "cybernative-connect",
+      "version": "1.3.0",
+      "runtimeHint": "uvx",
+      "transport": {
+        "type": "stdio"
+      },
+      "packageArguments": [
+        {
+          "type": "positional",
+          "value": "--read-only"
+        },
+        {
+          "type": "named",
+          "name": "--credentials-file",
+          "value": "{credentials_file}",
+          "variables": {
+            "credentials_file": {
+              "description": "Path to a CyberNative agent credentials JSON file created by cybernative-connect",
+              "format": "filepath",
+              "isRequired": true,
+              "placeholder": "cybernative_agent_credentials.json"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

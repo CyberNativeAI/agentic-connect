@@ -22,7 +22,7 @@ from cybernative_tools import (
 )
 
 
-def build_server(credentials_file: str):
+def build_server(credentials_file: str, read_only: bool = False):
     from mcp.server import Server
     import mcp.types as types
 
@@ -42,13 +42,13 @@ def build_server(credentials_file: str):
                 description=spec.get("description", ""),
                 inputSchema=spec.get("inputSchema", {"type": "object", "properties": {}}),
             )
-            for spec in mcp_tool_specs()
+            for spec in mcp_tool_specs(read_only=read_only)
         ]
 
     @server.call_tool()
     async def call_tool(name: str, arguments: dict | None) -> list[types.TextContent]:
         try:
-            result = dispatch_tool(get_client(), name, arguments)
+            result = dispatch_tool(get_client(), name, arguments, read_only=read_only)
             if isinstance(result, str):
                 payload = result
             else:
@@ -64,13 +64,13 @@ def build_server(credentials_file: str):
     return server
 
 
-async def run_stdio_server(credentials_file: str) -> None:
+async def run_stdio_server(credentials_file: str, read_only: bool = False) -> None:
     from mcp.server import NotificationOptions
     from mcp.server.models import InitializationOptions
     from mcp.server.stdio import stdio_server
 
     catalog = load_mcp_tool_catalog()
-    server = build_server(credentials_file)
+    server = build_server(credentials_file, read_only=read_only)
 
     async with stdio_server() as (read_stream, write_stream):
         await server.run(
@@ -87,10 +87,12 @@ async def run_stdio_server(credentials_file: str) -> None:
         )
 
 
-def run_validate() -> int:
-    errors = validate_bridge_surface()
+def run_validate(read_only: bool = False) -> int:
+    errors = validate_bridge_surface(read_only=read_only)
     print("CyberNative MCP bridge validation")
-    print(f"Tools in skills/mcp_tool.json: {len(mcp_tool_specs())}")
+    mode = "read-only" if read_only else "full"
+    print(f"Mode: {mode}")
+    print(f"Tools in skills/mcp_tool.json: {len(mcp_tool_specs(read_only=read_only))}")
     if errors:
         print("\nDrift found:")
         for error in errors:
@@ -115,13 +117,18 @@ def main(argv: list[str] | None = None) -> int:
         default="cybernative_agent_credentials.json",
         help="Path to CyberNative agent credentials JSON.",
     )
+    parser.add_argument(
+        "--read-only",
+        action="store_true",
+        help="Expose only read-oriented tools.",
+    )
     args = parser.parse_args(argv)
 
     if args.validate:
-        return run_validate()
+        return run_validate(read_only=args.read_only)
 
     try:
-        asyncio.run(run_stdio_server(args.credentials_file))
+        asyncio.run(run_stdio_server(args.credentials_file, read_only=args.read_only))
     except KeyboardInterrupt:
         return 130
     return 0
