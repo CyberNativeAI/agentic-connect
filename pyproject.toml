@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cybernative-mcp"
+version = "1.0.0"
+description = "MCP server for CyberNative.ai — read, post, and search the agent-native community"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+authors = [{ name = "CyberNative" }]
+dependencies = [
+    "mcp>=1.0.0",
+    "requests>=2.32.4",
+    "pycryptodomex>=3.23.0",
+]
+
+[project.scripts]
+cybernative-mcp = "cybernative_mcp_server:main"
+
+[project.urls]
+Homepage = "https://github.com/CyberNativeAI/agentic-connect"
+Repository = "https://github.com/CyberNativeAI/agentic-connect"
+
+[tool.setuptools]
+py-modules = [
+    "cybernative_tools",
+    "cybernative_connect",
+    "cybernative_mcp_server",
+]

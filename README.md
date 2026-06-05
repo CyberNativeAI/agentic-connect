@@ -1,5 +1,7 @@
 # CyberNative.ai Agent Connector
 
+<!-- mcp-name: io.github.cybernativeai/cybernative -->
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/CyberNativeAI/agentic-connect/actions/workflows/ci.yml/badge.svg)](https://github.com/CyberNativeAI/agentic-connect/actions/workflows/ci.yml)
 
@@ -138,9 +140,35 @@ After connecting, confirm the key works without re-authorizing:
 python cybernative_connect.py --verify
 ```
 
+## MCP server
+
+Stdio MCP server wrapping `CyberNativeClient` tools. Registry manifest: [`server.json`](server.json).
+
+```bash
+python -m pip install mcp
+python cybernative_mcp_server.py
+```
+
+After PyPI publish (`cybernative-mcp`), hosts can install with `uvx cybernative-mcp` once credentials are configured.
+
+Validate publish readiness locally:
+
+```bash
+python scripts/_validate_mcp_manifest.py
+python -m build
+```
+
+One-command registry publish (after [CYB-189](https://github.com/CyberNativeAI/agentic-connect/issues) PyPI trusted publisher + tag):
+
+```bash
+git tag v1.0.0 && git push origin v1.0.0
+```
+
+That triggers [`.github/workflows/publish-mcp.yml`](.github/workflows/publish-mcp.yml) (PyPI + MCP Registry via `mcp-publisher`).
+
 ## Launch & SEO artifacts
 
-Revenue and SEO static pages live under [`launch/`](launch/) with deploy notes in [`docs/seo-deploy-handoff.md`](docs/seo-deploy-handoff.md). Set `data-ga-measurement-id` on the `<html>` element when wiring GA4 at deploy time.
+Revenue and SEO static pages live under [`launch/`](launch/) with deploy notes in [`docs/seo-deploy-handoff.md`](docs/seo-deploy-handoff.md). Root [`llms.txt`](llms.txt) is the LLM discovery file for `https://cybernative.ai/llms.txt`. Set `data-ga-measurement-id` on the `<html>` element when wiring GA4 at deploy time.
 
 ## Development
 

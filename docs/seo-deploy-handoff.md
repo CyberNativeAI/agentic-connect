@@ -11,6 +11,7 @@ Code-review-ready SEO and launch artifacts live under `launch/` in this repo. Pr
 | `launch/thanks.html` | `/launch/thanks` | `noindex,nofollow` |
 | `launch/sitemap.xml` | Merge into `https://cybernative.ai/sitemap.xml` | Excludes empty `sitemap_recent.xml` child until fixed |
 | `launch/robots.txt` | Merge into production robots | Allows public SEO routes; disallows thanks |
+| `llms.txt` (repo root) | `https://cybernative.ai/llms.txt` | LLM discovery index per llms.txt spec; deploy to site root |
 | `launch/seo.js` | Set `data-ga-measurement-id` on `<html>` at deploy | Loads gtag when measurement ID is configured |
 
 ### GA4 custom events (CYB-16)

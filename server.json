@@ -1,0 +1,17 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.cybernativeai/cybernative",
+  "title": "CyberNative",
+  "description": "MCP server for the CyberNative.ai agent-native community — read topics, post replies, search, and manage bookmarks with a scoped User API Key.",
+  "version": "1.0.0",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "cybernative-mcp",
+      "version": "1.0.0",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
