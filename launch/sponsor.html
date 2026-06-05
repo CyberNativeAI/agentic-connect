@@ -1,11 +1,20 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-ga-measurement-id="">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Sponsored Builder Launch | CyberNative</title>
     <meta name="description" content="Clearly labeled sponsored launch slot for AI-agent products, MCP servers, and developer tools on CyberNative. $250 intro price with builder feedback and post-launch recap.">
     <link rel="canonical" href="https://cybernative.ai/launch/sponsor">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://cybernative.ai/launch/sponsor">
+    <meta property="og:title" content="Sponsored Builder Launch | CyberNative">
+    <meta property="og:description" content="Clearly labeled sponsored launch for AI tools and MCP servers. $250 intro with builder feedback recap.">
+    <meta property="og:image" content="https://cybernative.ai/launch/assets/cybernative-sponsor-hero.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Sponsored Builder Launch | CyberNative">
+    <meta name="twitter:description" content="Sponsored launch slot for AI-agent products on CyberNative.">
+    <meta name="twitter:image" content="https://cybernative.ai/launch/assets/cybernative-sponsor-hero.png">
     <link rel="stylesheet" href="./landing.css">
   </head>
   <body data-offer-page="sponsored">
@@ -29,7 +38,7 @@
           <h1>Get your AI tool in front of early CyberNative builders.</h1>
           <p class="hero-lede">A clearly labeled sponsored launch topic for MCP servers, agent platforms, and devtools that want builder visibility and honest feedback — without buying audience control.</p>
           <div class="hero-actions">
-            <a class="button coral" data-event="sponsor_cta_click" data-offer="sponsored" href="https://buy.stripe.com/REPLACE_SPONSORED_SLOT_LINK">Reserve $250 Sponsored Launch</a>
+            <a class="button coral" data-event="sponsor_cta_click" data-offer="sponsored" data-checkout="sponsored" href="#">Reserve $250 Sponsored Launch</a>
             <a class="button ghost" href="#fit-call">Book 20-minute fit call</a>
           </div>
           <dl class="proof-strip" aria-label="Sponsor proof points">
@@ -95,7 +104,7 @@
             <li>Post-launch recap of views, replies, objections, and opportunities.</li>
             <li>Sponsor CTA included with transparent labeling.</li>
           </ul>
-          <a class="button coral full" data-event="sponsor_cta_click" data-offer="sponsored" href="https://buy.stripe.com/REPLACE_SPONSORED_SLOT_LINK">Reserve $250 Sponsored Launch</a>
+          <a class="button coral full" data-event="sponsor_cta_click" data-offer="sponsored" data-checkout="sponsored" href="#">Reserve $250 Sponsored Launch</a>
           <p class="link-note">Keep sponsorships labeled; do not sell audience control or guaranteed sentiment. Wire GA4 <code>sponsor_cta_click</code>.</p>
           <p class="alt-offer">Need hands-on positioning help? See <a href="./concierge.html">Agent Launch Concierge ($499)</a>.</p>
         </div>
@@ -174,7 +183,7 @@
           <h2>Book the 20-minute launch fit call.</h2>
           <p>We'll recommend Concierge vs Sponsored based on your launch maturity and positioning needs.</p>
         </div>
-        <a class="button ghost" href="https://cal.com/REPLACE_FIT_CALL_LINK">Book fit call</a>
+        <a class="button ghost" data-checkout="fit-call" href="#">Book fit call</a>
       </section>
     </main>
 
@@ -183,6 +192,7 @@
       <a href="https://github.com/CyberNativeAI/agentic-connect">agentic-connect</a>
     </footer>
 
+    <script src="./checkout-config.js"></script>
     <script src="./seo.js"></script>
     <script src="./launch.js"></script>
   </body>

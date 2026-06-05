@@ -512,6 +512,11 @@ footer a {
   font-weight: 600;
 }
 
+[data-checkout-pending="true"] {
+  outline: 1px dashed color-mix(in srgb, var(--cn-signal) 45%, transparent);
+  outline-offset: 2px;
+}
+
 @media (max-width: 940px) {
   .hero,
   .intake {

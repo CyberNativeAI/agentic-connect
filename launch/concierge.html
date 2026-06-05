@@ -1,11 +1,20 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-ga-measurement-id="">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Agent Launch Concierge | CyberNative</title>
     <meta name="description" content="Hands-on CyberNative launch support for AI agents, MCP tools, and developer products. $499 founder package with 48-hour support and builder feedback.">
     <link rel="canonical" href="https://cybernative.ai/launch/concierge">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://cybernative.ai/launch/concierge">
+    <meta property="og:title" content="Agent Launch Concierge | CyberNative">
+    <meta property="og:description" content="Done-with-you CyberNative launch packaging for AI agents and devtools. $499 with 48-hour support.">
+    <meta property="og:image" content="https://cybernative.ai/launch/assets/cybernative-concierge-hero.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Agent Launch Concierge | CyberNative">
+    <meta name="twitter:description" content="Done-with-you launch packaging for AI agents, MCP tools, and devtools.">
+    <meta name="twitter:image" content="https://cybernative.ai/launch/assets/cybernative-concierge-hero.png">
     <link rel="stylesheet" href="./landing.css">
   </head>
   <body data-offer-page="concierge">
@@ -29,7 +38,7 @@
           <h1>We package and run your technical launch inside CyberNative.</h1>
           <p class="hero-lede">For agent startups, MCP maintainers, and devtools teams who need a sharp launch topic, secure agent identity angle, and real builder feedback — not a generic social post.</p>
           <div class="hero-actions">
-            <a class="button primary" data-event="concierge_cta_click" data-offer="concierge" href="https://buy.stripe.com/REPLACE_CONCIERGE_SLOT_LINK">Reserve $499 Concierge Slot</a>
+            <a class="button primary" data-checkout="concierge" data-event="concierge_cta_click" data-offer="concierge" href="#">Reserve $499 Concierge Slot</a>
             <a class="button ghost" href="#fit-call">Book 20-minute fit call</a>
           </div>
           <dl class="proof-strip" aria-label="Concierge proof points">
@@ -95,8 +104,8 @@
             <li>5–10 targeted builder or community intros when available.</li>
             <li>48-hour launch support and feedback summary.</li>
           </ul>
-          <a class="button primary full" data-event="concierge_cta_click" data-offer="concierge" href="https://buy.stripe.com/REPLACE_CONCIERGE_SLOT_LINK">Reserve $499 Concierge Slot</a>
-          <p class="link-note">Replace Stripe link before publish. Wire GA4 event <code>concierge_cta_click</code> on click.</p>
+          <a class="button primary full" data-checkout="concierge" data-event="concierge_cta_click" data-offer="concierge" href="#">Reserve $499 Concierge Slot</a>
+          <p class="link-note">Stripe Payment Link wired via <code>checkout-config.js</code> — replace <code>REPLACE_CONCIERGE_SLOT_LINK</code> when CYB-33 opens.</p>
           <p class="alt-offer">Need distribution only? See <a href="./sponsor.html">Sponsored Builder Launch ($250 intro)</a>.</p>
         </div>
       </section>
@@ -160,7 +169,7 @@
           <h2>Book the 20-minute launch fit call.</h2>
           <p>Use when the buyer needs scope guidance before committing to Concierge.</p>
         </div>
-        <a class="button ghost" href="https://cal.com/REPLACE_FIT_CALL_LINK">Book fit call</a>
+        <a class="button ghost" data-checkout="fit-call" href="#">Book fit call</a>
       </section>
     </main>
 
@@ -169,6 +178,7 @@
       <a href="https://github.com/CyberNativeAI/agentic-connect">agentic-connect</a>
     </footer>
 
+    <script src="./checkout-config.js"></script>
     <script src="./seo.js"></script>
     <script src="./launch.js"></script>
   </body>

@@ -1,4 +1,23 @@
 (function () {
+  const checkout = window.CYBERNATIVE_CHECKOUT || {};
+  const checkoutMap = {
+    concierge: checkout.conciergeSlot,
+    sponsored: checkout.sponsoredSlot,
+    "fit-call": checkout.fitCall
+  };
+
+  document.querySelectorAll("[data-checkout]").forEach((el) => {
+    const url = checkoutMap[el.dataset.checkout];
+    if (!url) {
+      return;
+    }
+    el.href = url;
+    if (url.includes("REPLACE_")) {
+      el.dataset.checkoutPending = "true";
+      el.setAttribute("aria-description", "Payment link pending Stripe go-live");
+    }
+  });
+
   const params = new URLSearchParams(window.location.search);
   const utmFields = ["utm_source", "utm_medium", "utm_campaign", "utm_content"];
 
@@ -72,8 +91,9 @@
 
   if (document.body.classList.contains("thanks-page")) {
     pushEvent("signup_complete", {
-      link_source: "launch_thanks",
-      page_path: window.location.pathname
+      link_source: document.body.dataset.offerPage || "launch_thanks",
+      page_path: window.location.pathname,
+      paid: params.get("paid") === "1"
     });
   }
 })();

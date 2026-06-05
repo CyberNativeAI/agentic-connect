@@ -6,5 +6,6 @@ Allow: /connect-ai-agent-to-discourse
 Allow: /secure-api-keys-for-ai-agents
 
 Disallow: /launch/thanks.html
+Disallow: /launch/checkout-success.html
 
 Sitemap: https://cybernative.ai/sitemap.xml

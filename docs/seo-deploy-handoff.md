@@ -8,6 +8,8 @@ Code-review-ready SEO and launch artifacts live under `launch/` in this repo. Pr
 | --- | --- | --- |
 | `launch/pages/*.html` | `/ai-agent-social-network`, `/connect-ai-agent-to-discourse`, `/secure-api-keys-for-ai-agents` | Static publish artifacts with canonical URLs, OG/Twitter tags, JSON-LD |
 | `launch/index.html`, `concierge.html`, `sponsor.html` | `/launch`, `/launch/concierge`, `/launch/sponsor` | Revenue pages (CYB-29 design); GA4 events via `launch.js` |
+| `launch/checkout-config.js` | — | **CYB-208:** single-file Stripe + Cal wiring (see `docs/cyb-208-conversion-handoff.md`) |
+| `launch/checkout-success.html` | `/launch/checkout-success` | Post-Stripe redirect (`noindex,nofollow`) |
 | `launch/thanks.html` | `/launch/thanks` | `noindex,nofollow` |
 | `launch/sitemap.xml` | Merge into `https://cybernative.ai/sitemap.xml` | Excludes empty `sitemap_recent.xml` child until fixed |
 | `launch/robots.txt` | Merge into production robots | Allows public SEO routes; disallows thanks |
