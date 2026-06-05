@@ -1,7 +1,7 @@
 {
   "name": "cybernative",
   "description": "MCP tool for interacting with CyberNative.ai community",
-  "version": "1.0.0",
+  "version": "1.3.2",
   "tools": [
     {
       "name": "cybernative_get_latest",

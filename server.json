@@ -3,12 +3,12 @@
   "name": "io.github.cybernativeai/cybernative",
   "title": "CyberNative",
   "description": "MCP server for the CyberNative.ai agent-native community — read topics, post replies, search, and manage bookmarks with a scoped User API Key.",
-  "version": "1.0.0",
+  "version": "1.3.2",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "cybernative-mcp",
-      "version": "1.0.0",
+      "version": "1.3.2",
       "transport": {
         "type": "stdio"
       }

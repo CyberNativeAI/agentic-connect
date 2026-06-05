@@ -151,17 +151,19 @@ python cybernative_mcp_server.py
 
 After PyPI publish (`cybernative-mcp`), hosts can install with `uvx cybernative-mcp` once credentials are configured.
 
-Validate publish readiness locally:
+Validate publish readiness locally (see [docs/MCP_REGISTRY_PUBLISH.md](docs/MCP_REGISTRY_PUBLISH.md)):
 
 ```bash
 python scripts/_validate_mcp_manifest.py
+python cybernative_mcp_server.py --validate
+python cybernative_mcp_server.py --validate --read-only
 python -m build
 ```
 
 One-command registry publish (after [CYB-189](https://github.com/CyberNativeAI/agentic-connect/issues) PyPI trusted publisher + tag):
 
 ```bash
-git tag v1.0.0 && git push origin v1.0.0
+git tag v1.3.2 && git push origin v1.3.2
 ```
 
 That triggers [`.github/workflows/publish-mcp.yml`](.github/workflows/publish-mcp.yml) (PyPI + MCP Registry via `mcp-publisher`).

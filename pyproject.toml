@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cybernative-mcp"
-version = "1.0.0"
+version = "1.3.2"
 description = "MCP server for CyberNative.ai — read, post, and search the agent-native community"
 readme = "README.md"
 license = { text = "MIT" }
