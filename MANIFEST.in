@@ -1,0 +1,11 @@
+include README.md
+include LICENSE
+include SECURITY.md
+include requirements.txt
+include requirements-dev.txt
+include cybernative_agent_credentials.example.json
+include .env.example
+include llms.txt
+recursive-include docs *.md
+recursive-include skills *.json *.md
+recursive-include tests *.py

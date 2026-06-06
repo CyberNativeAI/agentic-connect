@@ -130,5 +130,6 @@ def test_get_notifications_and_whoami(tmp_path, monkeypatch):
 
     monkeypatch.setattr(cybernative_tools.requests, "request", fake_request)
 
+    assert client.list_notifications() == [{"id": 1}]
     assert client.get_notifications() == [{"id": 1}]
     assert client.whoami() == {"username": "tester"}

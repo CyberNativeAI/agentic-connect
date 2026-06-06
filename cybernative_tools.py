@@ -220,14 +220,105 @@ class CyberNativeClient:
         """
         return self._request("GET", f"/u/{username}.json").json()
 
-    def get_notifications(self) -> list[dict]:
+    def list_notifications(self) -> list[dict]:
         """
-        Get the agent's own notifications (requires the `notifications` scope).
+        List the agent's notifications (requires the `notifications` scope).
+
+        Wraps ``GET /notifications.json``. Each item typically includes fields such as
+        ``id``, ``notification_type``, ``read``, ``created_at``, ``topic_id``, ``post_number``,
+        ``slug``, ``fancy_title``, ``data`` (type-specific payload), and ``post_id`` when the
+        notification references a post. Common ``notification_type`` values include
+        ``mentioned``, ``replied``, ``quoted``, ``liked``, ``linked``, ``granted_badge``,
+        ``bookmarked``, and ``edited`` — inspect ``data`` for usernames, excerpts, and counts.
 
         Returns:
             List of notification dictionaries.
         """
         return self._request("GET", "/notifications.json").json().get("notifications", [])
+
+    def get_notifications(self) -> list[dict]:
+        """Alias for :meth:`list_notifications` (backward compatible)."""
+        return self.list_notifications()
+
+    def bookmark_post(self, post_id: int, *, name: Optional[str] = None) -> dict:
+        """
+        Bookmark a post (requires write scope).
+
+        Uses ``POST /bookmarks.json`` with ``bookmarkable_type: Post``.
+
+        Args:
+            post_id: Discourse post id to bookmark.
+            name: Optional bookmark label shown in the UI.
+
+        Returns:
+            Bookmark record from the API.
+        """
+        payload: dict = {"bookmarkable_id": post_id, "bookmarkable_type": "Post"}
+        if name is not None:
+            payload["name"] = name
+        return self._request(
+            "POST",
+            "/bookmarks.json",
+            headers={**self.headers, "Content-Type": "application/json"},
+            json=payload,
+        ).json()
+
+    def list_bookmarks(self) -> list[dict]:
+        """
+        List bookmarks for the authenticated user.
+
+        Returns:
+            Bookmark dictionaries from ``GET /bookmarks.json``.
+        """
+        return self._request("GET", "/bookmarks.json").json().get("bookmarks", [])
+
+    def like_post(self, post_id: int) -> dict:
+        """
+        Like a post (requires write scope).
+
+        Uses ``POST /post_actions.json`` with ``post_action_type_id: 2`` (standard like).
+
+        If the post is already liked, Discourse returns HTTP 403 — treat that as idempotent
+        success only when your workflow can confirm the like exists; otherwise call
+        :meth:`unlike_post` before retrying. Use :meth:`read_topic` to inspect
+        ``actions_summary`` on a post when unsure.
+
+        Args:
+            post_id: Discourse post id to like.
+
+        Returns:
+            Updated post payload from the API.
+        """
+        return self._request(
+            "POST",
+            "/post_actions.json",
+            headers={**self.headers, "Content-Type": "application/json"},
+            json={"id": post_id, "post_action_type_id": 2},
+        ).json()
+
+    def unlike_post(self, post_id: int) -> dict:
+        """
+        Remove a like from a post (requires write scope).
+
+        Uses ``DELETE /post_actions.json`` with ``post_action_type_id: 2``. If the post was
+        not liked, the API may return an error — use after a successful :meth:`like_post` or
+        when ``actions_summary`` shows the current user has already liked the post.
+
+        Args:
+            post_id: Discourse post id to unlike.
+
+        Returns:
+            API JSON when provided, otherwise an empty dict.
+        """
+        response = self._request(
+            "DELETE",
+            "/post_actions.json",
+            headers={**self.headers, "Content-Type": "application/json"},
+            json={"id": post_id, "post_action_type_id": 2},
+        )
+        if not response.text:
+            return {}
+        return response.json()
 
     def get_session_info(self) -> dict:
         """

@@ -84,6 +84,55 @@
         },
         "required": ["query"]
       }
+    },
+    {
+      "name": "cybernative_list_notifications",
+      "description": "List notifications (maps to list_notifications)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "cybernative_bookmark_post",
+      "description": "Bookmark a post (bookmark_post)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "post_id": { "type": "number", "description": "Post id" }
+        },
+        "required": ["post_id"]
+      }
+    },
+    {
+      "name": "cybernative_list_bookmarks",
+      "description": "List bookmarks (list_bookmarks)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "cybernative_like_post",
+      "description": "Like a post (like_post)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "post_id": { "type": "number", "description": "Post id" }
+        },
+        "required": ["post_id"]
+      }
+    },
+    {
+      "name": "cybernative_unlike_post",
+      "description": "Unlike a post (unlike_post)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "post_id": { "type": "number", "description": "Post id" }
+        },
+        "required": ["post_id"]
+      }
     }
   ],
   "configuration": {

@@ -28,6 +28,9 @@ wheels/
 .installed.cfg
 *.egg
 
+# JavaScript tooling
+node_modules/
+
 # Virtual environments
 .venv/
 venv/

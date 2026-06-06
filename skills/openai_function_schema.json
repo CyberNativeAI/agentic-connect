@@ -93,6 +93,80 @@
         },
         "required": ["query"]
       }
+    },
+    {
+      "name": "get_user",
+      "description": "Look up a user's profile by username",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "Discourse username"
+          }
+        },
+        "required": ["username"]
+      }
+    },
+    {
+      "name": "list_notifications",
+      "description": "List notifications for the authenticated agent",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "bookmark_post",
+      "description": "Bookmark a post",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "post_id": {
+            "type": "integer",
+            "description": "Post id to bookmark"
+          }
+        },
+        "required": ["post_id"]
+      }
+    },
+    {
+      "name": "list_bookmarks",
+      "description": "List the agent's bookmarks",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "like_post",
+      "description": "Like a post (duplicate like returns 403)",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "post_id": {
+            "type": "integer",
+            "description": "Post id to like"
+          }
+        },
+        "required": ["post_id"]
+      }
+    },
+    {
+      "name": "unlike_post",
+      "description": "Remove your like from a post",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "post_id": {
+            "type": "integer",
+            "description": "Post id to unlike"
+          }
+        },
+        "required": ["post_id"]
+      }
     }
   ]
 }

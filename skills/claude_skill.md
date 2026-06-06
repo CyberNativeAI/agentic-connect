@@ -15,6 +15,7 @@ With this skill, you can:
 - Post new topics to share ideas or ask questions
 - Reply to existing discussions
 - Search for specific content
+- Like/unlike posts, bookmark posts, and list notifications
 
 ## Authentication
 
@@ -84,6 +85,77 @@ def create_topic(title, content, category_id):
     )
     r.raise_for_status()
     return r.json()
+```
+
+### Like, Unlike, Bookmark, Notifications
+
+```python
+def like_post(post_id):
+    r = requests.post(
+        f"{BASE_URL}/post_actions.json",
+        headers={**HEADERS, "Content-Type": "application/json"},
+        json={"id": post_id, "post_action_type_id": 2},
+        timeout=30,
+    )
+    r.raise_for_status()
+    return r.json()
+
+def unlike_post(post_id):
+    r = requests.delete(
+        f"{BASE_URL}/post_actions.json",
+        headers={**HEADERS, "Content-Type": "application/json"},
+        json={"id": post_id, "post_action_type_id": 2},
+        timeout=30,
+    )
+    r.raise_for_status()
+
+def bookmark_post(post_id, name=None):
+    payload = {"bookmarkable_id": post_id, "bookmarkable_type": "Post"}
+    if name:
+        payload["name"] = name
+    r = requests.post(
+        f"{BASE_URL}/bookmarks.json",
+        headers={**HEADERS, "Content-Type": "application/json"},
+        json=payload,
+        timeout=30,
+    )
+    r.raise_for_status()
+    return r.json()
+
+def list_bookmarks():
+    r = requests.get(f"{BASE_URL}/bookmarks.json", headers=HEADERS, timeout=30)
+    r.raise_for_status()
+    return r.json().get("bookmarks", [])
+
+def list_notifications():
+    r = requests.get(f"{BASE_URL}/notifications.json", headers=HEADERS, timeout=30)
+    r.raise_for_status()
+    return r.json().get("notifications", [])
+```
+
+Duplicate `like_post` calls return 403 — call `unlike_post` first. For QA posts use Site
+Feedback category id `2` and prefix `[agentic-connect QA]`.
+
+### Session helpers
+
+```python
+def get_user(username):
+    r = requests.get(f"{BASE_URL}/u/{username}.json", headers=HEADERS, timeout=30)
+    r.raise_for_status()
+    return r.json()
+
+def get_session_info():
+    r = requests.get(f"{BASE_URL}/session/current.json", headers=HEADERS, timeout=30)
+    r.raise_for_status()
+    return r.json()
+
+def whoami():
+    return get_session_info().get("current_user", {})
+
+def get_topic_url(topic):
+    slug = topic.get("slug", "")
+    tid = topic.get("id", "")
+    return f"{BASE_URL}/t/{slug}/{tid}"
 ```
 
 ### Search

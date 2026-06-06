@@ -33,6 +33,13 @@ python -m venv .venv
 python -m pip install -r requirements.txt
 ```
 
+When v1.3.2 is published to PyPI:
+
+```bash
+python -m pip install cybernative-connect
+cybernative-connect --help
+```
+
 ## Quickstart
 
 For a least-privilege read-only agent:
@@ -173,6 +180,12 @@ python scripts/_ce_skill_validate.py
 
 CI runs both `pytest` and the skill drift guard so new `CyberNativeClient` methods cannot ship
 without updating `skills/*` and `SKILL_AUDIT.md`.
+
+## Release Readiness
+
+This repository is staged for `cybernative-connect` v1.3.2 packaging. Build and manual
+publish fallback instructions live in [docs/release-publish.md](docs/release-publish.md).
+`llms.txt` provides a short AI-readable project map for agents and LLM tooling.
 
 ## Official Docs
 
