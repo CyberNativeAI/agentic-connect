@@ -5,7 +5,7 @@
  *   node scripts/capture-launch-screenshots.mjs
  */
 import { createServer } from "node:http";
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 import { join, extname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
@@ -13,7 +13,8 @@ import { chromium } from "playwright";
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const repoRoot = join(__dirname, "..");
 const launchDir = join(repoRoot, "launch");
-const outDir = join(launchDir, "evidence", "cyb-208");
+const evidenceTag = process.env.EVIDENCE_TAG || "cyb-254";
+const outDir = join(launchDir, "evidence", evidenceTag);
 
 const MIME = {
   ".html": "text/html",
@@ -23,6 +24,8 @@ const MIME = {
   ".jpg": "image/jpeg",
   ".svg": "image/svg+xml"
 };
+
+await mkdir(outDir, { recursive: true });
 
 function staticServer() {
   return createServer(async (req, res) => {
