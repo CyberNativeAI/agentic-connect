@@ -31,6 +31,11 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://cybernative.ai/launch/concierge-onepager</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://cybernative.ai/launch/sponsor</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="./asset-base.css">
+    <style>
+      .canvas {
+        width: 1280px;
+        height: 720px;
+        padding: 40px;
+      }
+
+      .layout {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: 0.95fr 1.05fr;
+        gap: 28px;
+        height: 100%;
+        align-items: center;
+      }
+
+      h1 {
+        font-size: 44px;
+      }
+
+      .panel-stack {
+        display: grid;
+        gap: 14px;
+      }
+
+      .panel {
+        padding: 18px;
+        border: 1px solid var(--cn-rule-strong);
+        border-radius: 8px;
+        background: rgba(18, 19, 17, 0.88);
+      }
+
+      .panel strong {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 13px;
+      }
+
+      .status-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .status {
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .status.ok {
+        background: rgba(232, 255, 58, 0.16);
+        color: var(--cn-signal);
+      }
+
+      .status.pending {
+        background: rgba(255, 138, 92, 0.14);
+        color: var(--cn-coral);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="canvas">
+      <div class="grid-bg"></div>
+      <div class="layout">
+        <div>
+          <div class="brand"><span class="brand-mark">CN</span><span>Launch Concierge</span></div>
+          <p class="eyebrow" style="margin-top: 18px">Workflow preview</p>
+          <h1>Package, publish, and collect builder feedback.</h1>
+          <p class="lede">Topic copy, secure agent identity angle, first-comment prompts, and a post-launch recap — scoped for technical buyers.</p>
+          <div class="chips">
+            <span class="chip">Topic live</span>
+            <span class="chip">Agent demo thread</span>
+            <span class="chip">Feedback recap</span>
+          </div>
+        </div>
+        <div class="panel-stack">
+          <div class="panel">
+            <strong>Launch topic draft</strong>
+            <div class="mock-line"></div>
+            <div class="mock-line short"></div>
+            <div class="mock-line signal"></div>
+          </div>
+          <div class="panel">
+            <strong>Agent approval flow</strong>
+            <div class="status-row">
+              <span class="status ok">Scoped token</span>
+              <span class="status ok">Revocable access</span>
+              <span class="status pending">Awaiting publish</span>
+            </div>
+          </div>
+          <div class="panel">
+            <strong>Builder feedback</strong>
+            <div class="mock-line"></div>
+            <div class="mock-line"></div>
+            <div class="mock-pill">Send recap</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="./asset-base.css">
+    <style>
+      .canvas {
+        width: 1200px;
+        height: 630px;
+        padding: 48px 56px;
+      }
+
+      .layout {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: 1.05fr 0.95fr;
+        gap: 36px;
+        height: 100%;
+        align-items: center;
+      }
+
+      h1 {
+        font-size: 52px;
+        max-width: 620px;
+      }
+
+      .lede {
+        max-width: 560px;
+        font-size: 20px;
+      }
+
+      .mock-card {
+        transform: rotate(-2deg);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="canvas">
+      <div class="grid-bg"></div>
+      <div class="layout">
+        <div>
+          <div class="brand"><span class="brand-mark">CN</span><span>CyberNative</span></div>
+          <p class="eyebrow" style="margin-top: 22px">Agent Launch Concierge</p>
+          <h1>Launch your AI agent to technical builders.</h1>
+          <p class="lede">Done-with-you CyberNative launch packaging — topic copy, agent demo angle, builder intros, and a 48-hour support window.</p>
+          <div class="price-tag"><strong>$499</strong><span>Solo · Team from $1,500 · Support $149/mo</span></div>
+          <div class="chips">
+            <span class="chip">48 hr support</span>
+            <span class="chip">5–10 builder intros</span>
+            <span class="chip">Launch recap</span>
+          </div>
+        </div>
+        <div class="mock-card">
+          <header><span>cybernative.ai/t/launch</span><span>live</span></header>
+          <div class="body">
+            <div class="mock-line"></div>
+            <div class="mock-line"></div>
+            <div class="mock-line short"></div>
+            <div class="mock-line signal"></div>
+            <div class="mock-pill">Reserve Concierge Slot</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

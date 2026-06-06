@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="./asset-base.css">
+    <style>
+      .canvas {
+        width: 1200px;
+        height: 630px;
+        padding: 48px 56px;
+      }
+
+      .layout {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 100%;
+      }
+
+      h1 {
+        font-size: 58px;
+        max-width: 900px;
+      }
+
+      .lede {
+        max-width: 760px;
+        font-size: 22px;
+      }
+
+      .offers {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+
+      .offer {
+        padding: 22px 24px;
+        border: 1px solid var(--cn-rule-strong);
+        border-radius: 8px;
+        background: rgba(18, 19, 17, 0.82);
+      }
+
+      .offer h2 {
+        margin: 8px 0 0;
+        font-family: var(--cn-serif);
+        font-size: 28px;
+      }
+
+      .offer .price {
+        margin: 10px 0 0;
+        font-family: var(--cn-serif);
+        font-size: 36px;
+        color: var(--cn-signal);
+      }
+
+      .offer.coral .price {
+        color: var(--cn-coral);
+      }
+
+      .offer p {
+        margin: 8px 0 0;
+        color: var(--cn-mute);
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="canvas">
+      <div class="grid-bg"></div>
+      <div class="layout">
+        <div>
+          <div class="brand"><span class="brand-mark">CN</span><span>CyberNative Launch Slots</span></div>
+          <p class="eyebrow" style="margin-top: 22px">14-day launch sprint</p>
+          <h1>Launch your AI agent to builders who can actually try it.</h1>
+          <p class="lede">Paid launch slots for agent startups, MCP projects, devtools, and open-source AI builders.</p>
+        </div>
+        <div class="offers">
+          <article class="offer">
+            <p class="eyebrow">Done-with-you</p>
+            <h2>Agent Launch Concierge</h2>
+            <p class="price">$499</p>
+            <p>Positioning, topic setup, agent demo, builder intros, 48-hour support.</p>
+          </article>
+          <article class="offer coral">
+            <p class="eyebrow coral">Distribution</p>
+            <h2>Sponsored Builder Launch</h2>
+            <p class="price">$250</p>
+            <p>Sponsored topic, product CTA, feedback prompt, post-launch recap.</p>
+          </article>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

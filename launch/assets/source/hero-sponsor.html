@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="./asset-base.css">
+    <style>
+      .canvas {
+        width: 1280px;
+        height: 720px;
+        padding: 40px;
+      }
+
+      .layout {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 28px;
+        height: 100%;
+        align-items: center;
+      }
+
+      h1 {
+        font-size: 44px;
+      }
+
+      .sponsor-card {
+        padding: 24px;
+        border: 1px solid rgba(255, 138, 92, 0.35);
+        border-radius: 8px;
+        background: linear-gradient(180deg, rgba(255, 138, 92, 0.08), rgba(18, 19, 17, 0.92));
+      }
+
+      .sponsor-card .label {
+        display: inline-block;
+        margin-bottom: 12px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(255, 138, 92, 0.18);
+        color: var(--cn-coral);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="canvas">
+      <div class="grid-bg"></div>
+      <div class="layout">
+        <div>
+          <div class="brand"><span class="brand-mark">CN</span><span>Sponsored Launch</span></div>
+          <p class="eyebrow coral" style="margin-top: 18px">Distribution slot</p>
+          <h1>Clearly labeled placement in front of AI-agent builders.</h1>
+          <p class="lede">For teams with launch copy ready — sponsored topic, product CTA, feedback prompt, and manual metrics recap.</p>
+          <div class="price-tag"><strong>$250</strong><span>Intro price · 3-pack $600 · Featured $400</span></div>
+        </div>
+        <div class="sponsor-card">
+          <span class="label">Sponsored</span>
+          <div class="mock-line"></div>
+          <div class="mock-line"></div>
+          <div class="mock-line short"></div>
+          <div class="mock-pill" style="background: var(--cn-coral)">Reserve $250 slot</div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
