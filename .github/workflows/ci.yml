@@ -18,7 +18,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -r requirements-dev.txt
-      - run: pytest
+      - run: python -m pip install -e .
+      - run: python -m pytest
       - run: python scripts/_ce_skill_validate.py
 
   release-artifacts:
