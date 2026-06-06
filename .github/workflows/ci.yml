@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: ["**"]
   pull_request:
 
 jobs:
@@ -20,3 +20,21 @@ jobs:
       - run: python -m pip install -r requirements-dev.txt
       - run: pytest
       - run: python scripts/_ce_skill_validate.py
+
+  release-artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install build twine
+      - run: rm -rf dist
+      - run: python -m build
+      - run: python -m twine check dist/*
+      - run: python -m venv .venv-release-check
+      - run: .venv-release-check/bin/python -m pip install --upgrade pip
+      - run: .venv-release-check/bin/python -m pip install dist/cybernative_connect-*.whl
+      - run: .venv-release-check/bin/cybernative-connect --help
+      - run: .venv-release-check/bin/python -c "from cybernative_tools import CyberNativeClient; print(CyberNativeClient.__name__)"
