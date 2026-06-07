@@ -100,6 +100,33 @@ class ProbePublicSmokeTest(unittest.TestCase):
             connect.main(["--help"])
         self.assertEqual(ctx.exception.code, 0)
 
+    @patch("cybernative_connect.requests.get")
+    def test_main_probe_public_cli_success(self, mock_get) -> None:
+        mock_get.return_value = MagicMock(
+            ok=True,
+            status_code=200,
+            json=MagicMock(
+                return_value={
+                    "topic_list": {
+                        "topics": [
+                            {"title": "CLI topic one"},
+                            {"title": "CLI topic two"},
+                        ]
+                    }
+                }
+            ),
+        )
+
+        stdout = StringIO()
+        with redirect_stdout(stdout):
+            code = connect.main(["--probe-public", "--limit", "2"])
+
+        self.assertEqual(code, 0)
+        output = stdout.getvalue()
+        self.assertIn("PROBE OK", output)
+        self.assertIn("CLI topic one", output)
+        mock_get.assert_called_once()
+
 
 class VerifySmokeTest(unittest.TestCase):
     @patch.object(connect, "example_read_latest", return_value=5)
