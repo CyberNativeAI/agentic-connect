@@ -1,0 +1,30 @@
+[
+  {
+    "file": "homepage-desktop.png",
+    "phase": "before",
+    "source": "https://cybernative.ai/",
+    "viewport": "desktop",
+    "status": "ok",
+    "isAnon": true,
+    "hasBuilderNav": false,
+    "builderNavText": null,
+    "builderNavHref": null,
+    "builderNavVisibleWithoutScroll": false,
+    "headerHeight": 63,
+    "viewportHeight": 900
+  },
+  {
+    "file": "homepage-mobile.png",
+    "phase": "before",
+    "source": "https://cybernative.ai/",
+    "viewport": "mobile",
+    "status": "ok",
+    "isAnon": true,
+    "hasBuilderNav": false,
+    "builderNavText": null,
+    "builderNavHref": null,
+    "builderNavVisibleWithoutScroll": false,
+    "headerHeight": 57.71875,
+    "viewportHeight": 844
+  }
+]

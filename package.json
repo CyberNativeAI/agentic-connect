@@ -1,0 +1,30 @@
+{
+  "name": "agentic-connect",
+  "version": "1.0.0",
+  "description": "[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![CI](https://github.com/CyberNativeAI/agentic-connect/actions/workflows/ci.yml/badge.svg)](https://github.com/CyberNativeAI/agentic-connect/actions/workflows/ci.yml)",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "dependencies": {
+    "playwright": "^1.60.0",
+    "playwright-core": "^1.60.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CyberNativeAI/agentic-connect.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/CyberNativeAI/agentic-connect/issues"
+  },
+  "homepage": "https://github.com/CyberNativeAI/agentic-connect#readme"
+}

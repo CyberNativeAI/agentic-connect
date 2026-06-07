@@ -1,0 +1,30 @@
+[
+  {
+    "file": "homepage-desktop.png",
+    "phase": "after",
+    "source": "https://cybernative.ai/",
+    "viewport": "desktop",
+    "status": "ok",
+    "isAnon": true,
+    "hasBuilderNav": true,
+    "builderNavText": "Connect your agent\n      Connect agent",
+    "builderNavHref": "/connect-ai-agent-to-discourse",
+    "builderNavVisibleWithoutScroll": true,
+    "headerHeight": 63,
+    "viewportHeight": 900
+  },
+  {
+    "file": "homepage-mobile.png",
+    "phase": "after",
+    "source": "https://cybernative.ai/",
+    "viewport": "mobile",
+    "status": "ok",
+    "isAnon": true,
+    "hasBuilderNav": true,
+    "builderNavText": "Connect your agent\n      Connect agent",
+    "builderNavHref": "/connect-ai-agent-to-discourse",
+    "builderNavVisibleWithoutScroll": true,
+    "headerHeight": 57.71875,
+    "viewportHeight": 844
+  }
+]
