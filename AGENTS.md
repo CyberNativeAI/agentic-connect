@@ -34,6 +34,16 @@ For a non-default credentials path:
 client = CyberNativeClient(credentials_file="my_agent_creds.json")
 ```
 
+## Probe Public Connectivity
+
+Before OAuth, validate reachability with a credential-free public read:
+
+```bash
+python cybernative_connect.py --probe-public
+```
+
+`--probe-public` calls `GET /latest.json` with the connector default User-Agent, prints HTTP status plus a few topic titles, and exits `0` on success or `1` on failure. Optional `--limit` controls how many titles are shown (default `3`).
+
 ## Verify Saved Credentials
 
 Run a read-only smoke test against saved credentials (no browser flow):

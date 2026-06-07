@@ -1,6 +1,8 @@
 import json
 import tempfile
 import unittest
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -44,6 +46,59 @@ class LoadCredentialsFileTest(unittest.TestCase):
             creds = connect.load_credentials_file(str(path))
             self.assertEqual(creds.base_url, "https://cybernative.ai")
             self.assertEqual(creds.user_api_key, "secret-key")
+
+
+class ProbePublicSmokeTest(unittest.TestCase):
+    @patch("cybernative_connect.requests.get")
+    def test_run_probe_public_success(self, mock_get) -> None:
+        mock_get.return_value = MagicMock(
+            ok=True,
+            status_code=200,
+            json=MagicMock(
+                return_value={
+                    "topic_list": {
+                        "topics": [
+                            {"title": "First topic"},
+                            {"title": "Second topic"},
+                            {"title": "Third topic"},
+                        ]
+                    }
+                }
+            ),
+        )
+
+        code = connect.run_probe_public(limit=2)
+
+        self.assertEqual(code, 0)
+        mock_get.assert_called_once()
+        self.assertIn("/latest.json", mock_get.call_args.args[0])
+        headers = mock_get.call_args.kwargs["headers"]
+        self.assertEqual(headers["User-Agent"], connect.DEFAULT_CONNECTOR_USER_AGENT)
+
+    @patch("cybernative_connect.requests.get")
+    def test_run_probe_public_http_error(self, mock_get) -> None:
+        mock_get.return_value = MagicMock(ok=False, status_code=403)
+
+        code = connect.run_probe_public()
+
+        self.assertEqual(code, 1)
+
+    @patch("cybernative_connect.requests.get")
+    def test_run_probe_public_empty_topics(self, mock_get) -> None:
+        mock_get.return_value = MagicMock(
+            ok=True,
+            status_code=200,
+            json=MagicMock(return_value={"topic_list": {"topics": []}}),
+        )
+
+        code = connect.run_probe_public()
+
+        self.assertEqual(code, 1)
+
+    def test_main_probe_public_help(self) -> None:
+        with self.assertRaises(SystemExit) as ctx:
+            connect.main(["--help"])
+        self.assertEqual(ctx.exception.code, 0)
 
 
 class VerifySmokeTest(unittest.TestCase):
@@ -103,6 +158,26 @@ class VerifySmokeTest(unittest.TestCase):
         self.assertEqual(code, 0)
         mock_get.assert_called_once()
         self.assertIn("/latest.json", mock_get.call_args.args[0])
+
+
+class ConnectMainTest(unittest.TestCase):
+    @patch.object(connect.RSA, "generate")
+    @patch.object(connect, "run_callback_server")
+    @patch.object(connect, "wait_for_payload")
+    def test_timeout_exits_cleanly_without_traceback(self, wait_for_payload, run_callback_server, generate_rsa) -> None:
+        httpd = MagicMock()
+        run_callback_server.return_value = httpd
+        wait_for_payload.side_effect = TimeoutError("Timed out after 3s waiting for approval callback.")
+        generate_rsa.return_value.publickey.return_value.export_key.return_value = b"public-key"
+
+        stdout = StringIO()
+        with redirect_stdout(stdout):
+            code = connect.main(["--read-only", "--timeout", "3", "--no-example"])
+
+        self.assertEqual(code, 1)
+        self.assertIn("ERROR: Timed out after 3s waiting for approval callback.", stdout.getvalue())
+        self.assertNotIn("Traceback", stdout.getvalue())
+        httpd.shutdown.assert_called_once()
 
 
 if __name__ == "__main__":

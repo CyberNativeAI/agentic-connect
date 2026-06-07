@@ -24,6 +24,7 @@ import binascii
 import json
 import os
 import secrets
+import sys
 import threading
 import time
 import urllib.parse
@@ -38,6 +39,9 @@ from Cryptodome.Random import get_random_bytes
 
 
 DEFAULT_BASE_URL = "https://cybernative.ai"
+DEFAULT_CONNECTOR_USER_AGENT = (
+    "cybernative-connect (+https://github.com/CyberNativeAI/agentic-connect)"
+)
 DEFAULT_APP_NAME = "CyberNative AI Agent"
 # "Plug & play": request broad access. Your forum configuration ultimately decides what's granted.
 DEFAULT_SCOPES = "read,write,notifications,session_info"
@@ -97,6 +101,13 @@ class CallbackHandler(BaseHTTPRequestHandler):
 
 def iso_utc_now() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+
+def _print_line(text: str = "", *, flush: bool = True) -> None:
+    encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
+    sys.stdout.write(f"{text}\n".encode(encoding, errors="replace").decode(encoding))
+    if flush:
+        sys.stdout.flush()
 
 
 def build_auth_url(
@@ -253,6 +264,50 @@ def example_read_latest(creds: CyberNativeAgentCreds, limit: int = 10) -> int:
     return len(topics)
 
 
+def run_probe_public(base_url: str = DEFAULT_BASE_URL, limit: int = 3) -> int:
+    """Credential-free public read-only smoke test against GET /latest.json."""
+    url = f"{base_url.rstrip('/')}/latest.json"
+    headers = {
+        "User-Agent": DEFAULT_CONNECTOR_USER_AGENT,
+        "Accept": "application/json",
+    }
+
+    print("Public connectivity probe: GET /latest.json", flush=True)
+    print(f"Base URL:   {base_url.rstrip('/')}", flush=True)
+    print(f"User-Agent: {DEFAULT_CONNECTOR_USER_AGENT}", flush=True)
+
+    try:
+        response = requests.get(url, headers=headers, timeout=30)
+    except requests.exceptions.RequestException as exc:
+        print(f"\nPROBE FAILED: request error: {exc}", flush=True)
+        return 1
+
+    print(f"HTTP status: {response.status_code}", flush=True)
+    if not response.ok:
+        print(f"\nPROBE FAILED: expected 2xx, got {response.status_code}", flush=True)
+        return 1
+
+    try:
+        data = response.json()
+    except ValueError as exc:
+        print(f"\nPROBE FAILED: response was not valid JSON: {exc}", flush=True)
+        return 1
+
+    topics = (data.get("topic_list") or {}).get("topics") or []
+    if not topics:
+        print("\nPROBE FAILED: no topics in response", flush=True)
+        return 1
+
+    shown = min(len(topics), limit)
+    print(f"\nLatest topics ({shown} shown):", flush=True)
+    for topic in topics[:limit]:
+        title = topic.get("title", "(no title)")
+        _print_line(f" - {title}")
+
+    print(f"\nPROBE OK: public read succeeded; showed {shown} topic(s).", flush=True)
+    return 0
+
+
 def run_verify_smoke_test(credentials_path: str, limit: int = 3) -> int:
     """Read-only credential smoke test using saved credentials. Returns process exit code."""
     print(f"\nVerifying credentials: {credentials_path}", flush=True)
@@ -283,17 +338,30 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="CyberNative.ai User API Key connector for AI agents.")
     parser.add_argument("--base-url", default=DEFAULT_BASE_URL)
     parser.add_argument("--app-name", default=DEFAULT_APP_NAME)
-    parser.add_argument("--scopes", default=DEFAULT_SCOPES)
+    parser.add_argument("--scopes", default=None)
     parser.add_argument("--host", default=DEFAULT_HOST)
     parser.add_argument("--port", type=int, default=DEFAULT_PORT)
     parser.add_argument("--path", default=DEFAULT_PATH)
     parser.add_argument("--timeout", type=int, default=DEFAULT_TIMEOUT_SECONDS)
+    parser.add_argument(
+        "--read-only",
+        action="store_true",
+        help="Request only read scope unless --scopes is explicitly provided.",
+    )
     parser.add_argument("--out", default="cybernative_agent_credentials.json", help="File to save credentials JSON.")
     parser.add_argument("--no-example", action="store_true", help="Skip fetching latest topics after connect.")
     parser.add_argument(
         "--print-secret",
         action="store_true",
         help="Print the raw user API key to stdout. By default only a masked value is printed.",
+    )
+    parser.add_argument(
+        "--probe-public",
+        action="store_true",
+        help=(
+            "Credential-free read-only GET /latest.json smoke test using the connector "
+            "default User-Agent (no OAuth or saved credentials required)."
+        ),
     )
     parser.add_argument(
         "--verify",
@@ -304,10 +372,14 @@ def main(argv: Optional[list[str]] = None) -> int:
         "--limit",
         type=int,
         default=3,
-        help="Number of latest topics to print during --verify (default: 3).",
+        help="Number of latest topics to print during --probe-public or --verify (default: 3).",
     )
     args = parser.parse_args(argv)
+    if args.scopes is None:
+        args.scopes = "read" if args.read_only else DEFAULT_SCOPES
 
+    if args.probe_public:
+        return run_probe_public(args.base_url.rstrip("/"), limit=args.limit)
     if args.verify:
         return run_verify_smoke_test(args.out, limit=args.limit)
 
@@ -348,6 +420,9 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     try:
         payload = wait_for_payload(args.timeout)
+    except TimeoutError as exc:
+        print(f"\nERROR: {exc}", flush=True)
+        return 1
     finally:
         httpd.shutdown()
 
