@@ -5,3 +5,4 @@
 - 2026-06-02: Discourse rejects self-likes with HTTP 403 and omits the like action on posts where `yours: true`; QA probes must like a readable post authored by another account, and unlike cleanup must include `post_action_type_id=2`.
 - 2026-06-04: When downloading CI logs during release work, write them outside the repo or re-check `git status` before `git add -A`; otherwise temporary diagnostics can be accidentally committed and tagged.
 - 2026-06-05: If a recovery wake says an issue is missing disposition, do not leave it in blocked on a generic status loop; record the real disposition immediately, usually `in_progress` when the hub still has live child work and auto-wake paths.
+- 2026-06-07: For agentic-connect install-doc fixes, do not stop at `pip install` success. Run the installed console script from outside the checkout; the v1.3.2 wheel initially omitted `skills/mcp_tool.json`, so `cybernative-mcp --validate` failed only after install.

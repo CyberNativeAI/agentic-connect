@@ -37,3 +37,9 @@ py-modules = [
     "cybernative_mcp_server",
     "cybernative_tools",
 ]
+
+[tool.setuptools.packages.find]
+include = ["skills"]
+
+[tool.setuptools.package-data]
+skills = ["mcp_tool.json"]
