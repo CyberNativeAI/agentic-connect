@@ -175,6 +175,7 @@ class ConnectMainTest(unittest.TestCase):
             code = connect.main(["--read-only", "--timeout", "3", "--no-example"])
 
         self.assertEqual(code, 1)
+        self.assertIn("scopes=read", stdout.getvalue())
         self.assertIn("ERROR: Timed out after 3s waiting for approval callback.", stdout.getvalue())
         self.assertNotIn("Traceback", stdout.getvalue())
         httpd.shutdown.assert_called_once()
