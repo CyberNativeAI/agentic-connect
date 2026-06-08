@@ -1,0 +1,21 @@
+{
+  "title": "Example Domain",
+  "url": "https://example.com/",
+  "h1": [
+    "Example Domain"
+  ],
+  "h2": [],
+  "description": null,
+  "ogTitle": null,
+  "ogImage": null,
+  "links": [
+    {
+      "text": "Learn more",
+      "href": "https://iana.org/domains/example"
+    }
+  ],
+  "bodyTextPreview": "Example DomainThis domain is for use in documentation examples without needing permission. Avoid use in operations.Learn more",
+  "hasHeaders": false,
+  "hasFooter": false,
+  "hasNav": false
+}

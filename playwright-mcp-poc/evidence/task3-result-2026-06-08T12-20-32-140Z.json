@@ -1,0 +1,4 @@
+{
+  "status": "fail",
+  "error": "page.goto: Timeout 15000ms exceeded.\nCall log:\n  - navigating to \"https://httpbin.org/status/404\", waiting until \"networkidle\"\n"
+}

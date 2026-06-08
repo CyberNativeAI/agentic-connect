@@ -1,0 +1,52 @@
+{
+  "status": "pass",
+  "results": {
+    "steps": [
+      {
+        "phase": "login-and-save",
+        "token": "poc-1780921123352-nyqqqx",
+        "storageStatePath": "C:\\Users\\andru\\.paperclip\\instances\\default\\workspaces\\7a5ea3bc-f48d-4f37-a970-0775cbf3919e\\agentic-connect\\playwright-mcp-poc\\storage-state\\session.json",
+        "stateSize": 941,
+        "status": "pass"
+      },
+      {
+        "phase": "verify-persistence",
+        "localStorage": {
+          "auth_token": "poc-1780921123352-nyqqqx",
+          "auth_user": "poc-agent",
+          "auth_scope": "read,write",
+          "auth_expires": "1781007531117"
+        },
+        "cookies": [
+          {
+            "name": "session",
+            "domain": "httpbin.org"
+          },
+          {
+            "name": "user_prefs",
+            "domain": "httpbin.org"
+          }
+        ],
+        "allPresent": {
+          "name": "user_prefs",
+          "value": "{\"theme\":\"dark\",\"lang\":\"en\"}",
+          "domain": "httpbin.org",
+          "path": "/",
+          "expires": -1,
+          "httpOnly": false,
+          "secure": false,
+          "sameSite": "Lax"
+        },
+        "status": "pass"
+      },
+      {
+        "phase": "secrets-hygiene",
+        "hasApiKey": false,
+        "hasSecret": false,
+        "hasPassword": false,
+        "clean": true,
+        "status": "pass"
+      }
+    ]
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/mcp.json",
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest",
+        "--browser", "chromium",
+        "--headless",
+        "--caps", "vision,pdf",
+        "--output-dir", "./playwright-mcp-poc/evidence",
+        "--save-session",
+        "--timeout-action", "10000",
+        "--timeout-navigation", "30000",
+        "--viewport-size", "1280x720",
+        "--user-data-dir", "./playwright-mcp-poc/.browser-profile"
+      ],
+      "env": {
+        "PLAYWRIGHT_MCP_OUTPUT_DIR": "./playwright-mcp-poc/evidence"
+      }
+    },
+    "playwright-isolated": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest",
+        "--browser", "chromium",
+        "--headless",
+        "--caps", "vision,pdf",
+        "--output-dir", "./playwright-mcp-poc/evidence",
+        "--save-session",
+        "--isolated",
+        "--timeout-action", "10000",
+        "--timeout-navigation", "30000",
+        "--viewport-size", "1280x720"
+      ],
+      "env": {
+        "PLAYWRIGHT_MCP_OUTPUT_DIR": "./playwright-mcp-poc/evidence"
+      }
+    },
+    "playwright-http": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest",
+        "--browser", "chromium",
+        "--headless",
+        "--caps", "vision,pdf",
+        "--output-dir", "./playwright-mcp-poc/evidence",
+        "--save-session",
+        "--port", "8931",
+        "--host", "0.0.0.0",
+        "--shared-browser-context",
+        "--timeout-action", "10000",
+        "--timeout-navigation", "30000",
+        "--viewport-size", "1280x720",
+        "--user-data-dir", "./playwright-mcp-poc/.browser-profile"
+      ],
+      "env": {
+        "PLAYWRIGHT_MCP_OUTPUT_DIR": "./playwright-mcp-poc/evidence"
+      }
+    }
+  }
+}

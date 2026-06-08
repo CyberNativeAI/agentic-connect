@@ -1,0 +1,25 @@
+{
+  "status": "pass",
+  "facts": {
+    "title": "Example Domain",
+    "url": "https://example.com/",
+    "h1": [
+      "Example Domain"
+    ],
+    "h2": [],
+    "description": null,
+    "ogTitle": null,
+    "ogImage": null,
+    "links": [
+      {
+        "text": "Learn more",
+        "href": "https://iana.org/domains/example"
+      }
+    ],
+    "bodyTextPreview": "Example DomainThis domain is for use in documentation examples without needing permission. Avoid use in operations.Learn more",
+    "hasHeaders": false,
+    "hasFooter": false,
+    "hasNav": false
+  },
+  "screenshotFile": "C:\\Users\\andru\\.paperclip\\instances\\default\\workspaces\\7a5ea3bc-f48d-4f37-a970-0775cbf3919e\\agentic-connect\\playwright-mcp-poc\\screenshots\\task1-page-2026-06-08T12-20-16-978Z.png"
+}

@@ -1,0 +1,4 @@
+{
+  "status": "fail",
+  "error": "page.goto: Navigation to \"https://httpbin.org/\" is interrupted by another navigation to \"chrome-error://chromewebdata/\"\nCall log:\n  - navigating to \"https://httpbin.org/\", waiting until \"networkidle\"\n"
+}

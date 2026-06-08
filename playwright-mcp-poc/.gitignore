@@ -1,0 +1,10 @@
+# Ignore browser profile data (may contain cookies/localStorage)
+.browser-profile/
+
+# Ignore storage state files (may contain session tokens)
+storage-state/
+
+# Evidence and screenshots ARE committed for PoC transparency
+# Only ignore secrets-related files
+*.secret.*
+*.key

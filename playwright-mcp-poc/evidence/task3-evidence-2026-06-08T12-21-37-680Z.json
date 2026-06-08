@@ -1,0 +1,66 @@
+{
+  "scenario": "CYB-999532 PoC Task 3",
+  "timestamp": "2026-06-08T12:21:40.359Z",
+  "consoleEntries": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-06-08T12:21:37.930Z"
+    },
+    {
+      "type": "error",
+      "text": "POC_404: Resource not found error",
+      "timestamp": "2026-06-08T12:21:37.952Z"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "timestamp": "2026-06-08T12:21:38.087Z"
+    },
+    {
+      "type": "log",
+      "text": "POC_INFO: Normal info message",
+      "timestamp": "2026-06-08T12:21:39.322Z"
+    },
+    {
+      "type": "warning",
+      "text": "POC_WARN: Warning message for debugging",
+      "timestamp": "2026-06-08T12:21:39.323Z"
+    },
+    {
+      "type": "error",
+      "text": "POC_ERROR: Error message for debugging",
+      "timestamp": "2026-06-08T12:21:39.323Z"
+    },
+    {
+      "type": "debug",
+      "text": "POC_DEBUG: Debug message",
+      "timestamp": "2026-06-08T12:21:39.324Z"
+    }
+  ],
+  "pageErrors": [
+    {
+      "message": "POC_500_RUNTIME: Intentional runtime error",
+      "timestamp": "2026-06-08T12:21:38.093Z"
+    },
+    {
+      "message": "POC_UNHANDLED: Async unhandled error for debugging test",
+      "timestamp": "2026-06-08T12:21:39.329Z"
+    }
+  ],
+  "networkFailures": [
+    {
+      "phase": "requestfailed",
+      "url": "https://definitely.invalid.local.test/",
+      "failure": "net::ERR_NAME_NOT_RESOLVED",
+      "timestamp": "2026-06-08T12:21:39.231Z"
+    }
+  ],
+  "summary": {
+    "totalConsole": 7,
+    "consoleErrors": 4,
+    "consoleWarnings": 1,
+    "networkFailures": 1,
+    "pageErrors": 2
+  }
+}
