@@ -1,6 +1,6 @@
 # Skill Audit
 
-Last audited: 2026-06-02
+Last audited: 2026-06-08
 
 Source of truth: `cybernative_tools.py`.
 
@@ -29,10 +29,11 @@ Convenience module functions expose the same API-call methods except `get_topic_
 
 ## Drift Found
 
-- None at the time of the 2026-06-02 audit.
+- None at the time of the 2026-06-08 audit.
 
 ## Fixes Applied
 
+- CYB-999620: Removed `User-Api-Client-Id` from default `CyberNativeClient` headers. Cloudflare WAF returns HTTP 500 when both `User-Api-Key` and `User-Api-Client-Id` are sent together. Discourse key-only auth works correctly. Updated tests and `cybernative_connect.py` dataclass headers.
 - Added the P0 engagement wrappers to `cybernative_tools.py`: bookmarks, likes, notification listing, and notification read cleanup helpers.
 - Added `scripts/_ce_skill_validate.py` so public `CyberNativeClient` methods are checked against `README.md`, `AGENTS.md`, the skill docs, the MCP schema, the OpenAI schema, and this audit file.
 - Updated `skills/mcp_tool.json` and `skills/openai_function_schema.json` to include the new engagement surface.
@@ -41,9 +42,9 @@ Convenience module functions expose the same API-call methods except `get_topic_
 - Kept the prior `cybernative_connect.py` hardening intact: no raw key printing by default, clearer callback failures, nonce validation, and best-effort private file permissions.
 - Added `cybernative_mcp_bridge.py` and `cybernative_mcp_server.py` so `skills/mcp_tool.json` tools dispatch to `CyberNativeClient` over stdio MCP; package and validate with `cybernative-mcp --validate` after `py -3 -m pip install -e ".[mcp]"`.
 
-## Test Coverage (2026-06-07)
+## Test Coverage (2026-06-08)
 
-54 unit tests across 3 test files (up from 25):
+199 unit tests across 9 test files (up from 54):
 
 - `tests/test_cybernative_connect.py` (22 tests): credential loading, verify smoke test, auth URL building, secret masking, key extraction, nonce validation, decryption errors, credentials dataclass.
 - `tests/test_cybernative_tools.py` (18 tests): all 16 `CyberNativeClient` public methods, URL quoting, retry logic, non-OK error handling.

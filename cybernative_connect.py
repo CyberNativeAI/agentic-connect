@@ -64,7 +64,6 @@ class CyberNativeAgentCreds:
     def headers(self) -> dict[str, str]:
         return {
             "User-Api-Key": self.user_api_key,
-            "User-Api-Client-Id": self.user_api_client_id,
             "Accept": "application/json",
         }
 

@@ -62,7 +62,6 @@ class CyberNativeClientTest(unittest.TestCase):
             "/notifications/mark-read.json",
             headers={
                 "User-Api-Key": "test-api-key",
-                "User-Api-Client-Id": "test-client-id",
                 "Accept": "application/json",
                 "Content-Type": "application/json",
             },
@@ -80,7 +79,6 @@ class CyberNativeClientTest(unittest.TestCase):
             "/notifications/mark-read.json",
             headers={
                 "User-Api-Key": "test-api-key",
-                "User-Api-Client-Id": "test-client-id",
                 "Accept": "application/json",
                 "Content-Type": "application/json",
             },
@@ -98,7 +96,6 @@ class CyberNativeClientTest(unittest.TestCase):
             "/notifications/mark-read.json",
             headers={
                 "User-Api-Key": "test-api-key",
-                "User-Api-Client-Id": "test-client-id",
                 "Accept": "application/json",
                 "Content-Type": "application/json",
             },
@@ -158,7 +155,6 @@ class CyberNativeClientTest(unittest.TestCase):
             "/bookmarks.json",
             headers={
                 "User-Api-Key": "test-api-key",
-                "User-Api-Client-Id": "test-client-id",
                 "Accept": "application/json",
                 "Content-Type": "application/json",
             },
@@ -184,7 +180,6 @@ class CyberNativeClientTest(unittest.TestCase):
             "/post_actions.json",
             headers={
                 "User-Api-Key": "test-api-key",
-                "User-Api-Client-Id": "test-client-id",
                 "Accept": "application/json",
                 "Content-Type": "application/json",
             },
@@ -264,7 +259,6 @@ class CyberNativeClientTest(unittest.TestCase):
             "/posts.json",
             headers={
                 "User-Api-Key": "test-api-key",
-                "User-Api-Client-Id": "test-client-id",
                 "Accept": "application/json",
                 "Content-Type": "application/json",
             },
@@ -282,7 +276,6 @@ class CyberNativeClientTest(unittest.TestCase):
             "/posts.json",
             headers={
                 "User-Api-Key": "test-api-key",
-                "User-Api-Client-Id": "test-client-id",
                 "Accept": "application/json",
                 "Content-Type": "application/json",
             },
@@ -308,7 +301,6 @@ class CyberNativeClientTest(unittest.TestCase):
             "/notifications/mark-read.json",
             headers={
                 "User-Api-Key": "test-api-key",
-                "User-Api-Client-Id": "test-client-id",
                 "Accept": "application/json",
                 "Content-Type": "application/json",
             },

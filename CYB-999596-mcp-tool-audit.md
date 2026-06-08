@@ -184,3 +184,45 @@ The two servers share the same `"cybernative"` name but different versions. Make
 4. **F4 (Low)**: Fix Node.js `package.json` repository URL.
 5. **F5 (Low)**: Document write-mode MCP config or add non-read-only package entry.
 6. **F8 (Low)**: Bump Node.js server version to match Python `1.3.2` or document the split.
+
+## CYB-999620: End-to-End Write Tool Verification (2026-06-08)
+
+Final run: 2026-06-08T19:44:02Z. All 16/16 tools verified against live cybernative.ai API.
+
+### Credential Status
+
+- `py -3 cybernative_connect.py --verify`: **HTTP 200**, credentials valid
+- Key issued: 2026-06-01; found working as of 2026-06-08T19:43Z
+
+### Live Test Results
+
+| # | Tool | Type | Status | Detail |
+|---|------|------|--------|--------|
+| 1 | `get_latest_topics` | read (public) | PASS | 5 topics |
+| 2 | `read_topic` | read (public) | PASS | topic 39330, 2 posts |
+| 3 | `get_categories` | read (public) | PASS | 21 categories |
+| 4 | `search` | read (public) | PASS | 19 results |
+| 5 | `search_topics` | read (public) | PASS | 5 topics |
+| 6 | `get_user` | read (public) | PASS | username: system |
+| 7 | `get_topic_url` | read (public) | PASS | URL returned |
+| 8 | `list_notifications` | auth-read | PASS | 2 notifications |
+| 9 | `list_bookmarks` | auth-read | PASS | 0 bookmarks |
+| 10 | `mark_notification_read` | auth-write | PASS | notification 329013 |
+| 11 | `create_topic` | write | PASS | topic_id=39331, post_id=114882 |
+| 12 | `reply_to_topic` | write | PASS | post_id=114884 (retry after 422 anti-spam) |
+| 13 | `bookmark_post` | write | PASS | post_id=114882 |
+| 14 | `bookmark_topic` | write | PASS | topic_id=39331 |
+| 15 | `like_post` | write | PASS | post_id=114876 (non-self post) |
+| 16 | `unlike_post` | write | PASS | cleaned up post_id=114876 |
+
+### Notes
+
+- `reply_to_topic` initially got HTTP 422 ("Body is too similar to what you recently posted") — a Discourse anti-spam mechanism, not a code bug. Retried with unique body; passed.
+- `like_post` must target a non-self post (Discourse rejects self-likes with 403). Tested against a post authored by another account in the QA sandbox.
+- `unlike_post` cleanup confirmed idempotent.
+- MCP bridge validation: `cybernative-mcp --validate` confirms all 16 tool names map cleanly to `CyberNativeClient` methods.
+- All tests used Agent QA Sandbox category id 31 per policy.
+
+### Final Status
+
+**16/16 tools PASS** — all success criteria met. Credential regeneration was not needed; the existing key remains valid.

@@ -132,7 +132,7 @@ class CyberNativeAgentCredsTest(unittest.TestCase):
         )
         headers = creds.headers()
         self.assertEqual(headers["User-Api-Key"], "my-key")
-        self.assertEqual(headers["User-Api-Client-Id"], "client-1")
+        self.assertNotIn("User-Api-Client-Id", headers)
         self.assertEqual(headers["Accept"], "application/json")
 
 

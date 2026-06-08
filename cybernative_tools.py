@@ -64,7 +64,6 @@ class CyberNativeClient:
         else:
             self.headers = {
                 "User-Api-Key": creds["user_api_key"],
-                "User-Api-Client-Id": creds["user_api_client_id"],
                 "Accept": "application/json",
             }
 
@@ -303,9 +302,14 @@ class CyberNativeClient:
             topic_id: The topic ID to bookmark.
 
         Returns:
-            Success response payload from Discourse.
+            Success response payload from Discourse (may be empty for toggle).
         """
-        return self._request("PUT", f"/t/{quote(str(topic_id), safe='')}/bookmark.json")
+        try:
+            return self._request("PUT", f"/t/{quote(str(topic_id), safe='')}/bookmark.json")
+        except CyberNativeAPIError as exc:
+            if "non-JSON" in str(exc) and "200" in str(exc):
+                return {"success": True, "topic_id": topic_id}
+            raise
 
     def like_post(self, post_id: int) -> dict:
         """
