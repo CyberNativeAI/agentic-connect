@@ -11,8 +11,7 @@ __pycache__/
 .Python
 build/
 develop-eggs/
-dist/
-downloads/
+/dist/
 eggs/
 .eggs/
 lib/
@@ -38,6 +37,9 @@ env/
 *.swp
 *.swo
 *~
+
+# Node (mcp-server)
+mcp-server/node_modules/
 
 # OS
 .DS_Store
