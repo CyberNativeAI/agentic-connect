@@ -41,6 +41,18 @@ Convenience module functions expose the same API-call methods except `get_topic_
 - Kept the prior `cybernative_connect.py` hardening intact: no raw key printing by default, clearer callback failures, nonce validation, and best-effort private file permissions.
 - Added `cybernative_mcp_bridge.py` and `cybernative_mcp_server.py` so `skills/mcp_tool.json` tools dispatch to `CyberNativeClient` over stdio MCP; package and validate with `cybernative-mcp --validate` after `py -3 -m pip install -e ".[mcp]"`.
 
+## Test Coverage (2026-06-07)
+
+54 unit tests across 3 test files (up from 25):
+
+- `tests/test_cybernative_connect.py` (22 tests): credential loading, verify smoke test, auth URL building, secret masking, key extraction, nonce validation, decryption errors, credentials dataclass.
+- `tests/test_cybernative_tools.py` (18 tests): all 16 `CyberNativeClient` public methods, URL quoting, retry logic, non-OK error handling.
+- `tests/test_cybernative_mcp_bridge.py` (14 tests): bridge surface validation, tool dispatch, read-only mode, error sanitization, tool-to-method mapping.
+
+Plus 1 negative-path integration script (`tests/run_negative_path_checks.py`) covering configuration errors, network failures, and CLI edge cases.
+
+Testing guide: `docs/TESTING.md`.
+
 ## Security Check
 
 - `cybernative_agent_credentials.json` exists locally and contains a real-looking key, but `git ls-files cybernative_agent_credentials.json` returns no tracked file and `git log -- cybernative_agent_credentials.json` returns no history in this clone.

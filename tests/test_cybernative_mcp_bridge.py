@@ -2,13 +2,15 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, mock_open, patch
 
 import cybernative_mcp_server
 from cybernative_mcp_bridge import (
     READ_ONLY_TOOL_NAMES,
     dispatch_tool,
+    load_mcp_tool_catalog,
     mcp_tool_specs,
+    sanitize_error_message,
     tool_to_method_name,
     validate_bridge_surface,
 )
@@ -81,6 +83,51 @@ class CyberNativeMcpBridgeTest(unittest.TestCase):
             side_effect=AssertionError("stdio should not run during validation"),
         ):
             self.assertEqual(cybernative_mcp_server.main(["--validate", "--read-only"]), 0)
+
+    def test_tool_to_method_name_raises_on_bad_prefix(self) -> None:
+        with self.assertRaisesRegex(ValueError, "unexpected MCP tool name"):
+            tool_to_method_name("bad_prefix_get_topics")
+
+    def test_dispatch_tool_unknown_tool_raises(self) -> None:
+        client = self.make_client()
+
+        with self.assertRaises(AttributeError):
+            dispatch_tool(client, "cybernative_nonexistent_method", {})
+
+    def test_sanitize_error_message_redacts_api_key(self) -> None:
+        result = sanitize_error_message(
+            'user_api_key=abc123secretkeyxyz789 something else'
+        )
+        self.assertNotIn("abc123secretkeyxyz789", result)
+        self.assertIn("[redacted]", result)
+
+    def test_sanitize_error_message_redacts_user_api_key_colon(self) -> None:
+        result = sanitize_error_message(
+            "User-Api-Key: my-super-secret-token-12345 header invalid"
+        )
+        self.assertNotIn("my-super-secret-token-12345", result)
+        self.assertIn("[redacted]", result)
+
+    def test_sanitize_error_message_passes_clean_message(self) -> None:
+        result = sanitize_error_message("Connection refused: timeout after 30s")
+        self.assertEqual(result, "Connection refused: timeout after 30s")
+
+    def test_load_mcp_tool_catalog_returns_dict(self) -> None:
+        catalog = load_mcp_tool_catalog()
+        self.assertIn("tools", catalog)
+        self.assertIsInstance(catalog["tools"], list)
+        self.assertGreater(len(catalog["tools"]), 0)
+
+    def make_client(self) -> CyberNativeClient:
+        creds = {
+            "base_url": "https://cybernative.ai/",
+            "user_api_key": "test-api-key",
+            "user_api_client_id": "test-client-id",
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "creds.json"
+            path.write_text(json.dumps(creds), encoding="utf-8")
+            return CyberNativeClient(credentials_file=str(path), max_retries=0)
 
 
 if __name__ == "__main__":

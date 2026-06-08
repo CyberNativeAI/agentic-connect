@@ -217,6 +217,8 @@ py -3 -m pip install -e ".[mcp]"
 cybernative-mcp --validate
 ```
 
+For detailed guidance on writing and running tests, see [`docs/TESTING.md`](docs/TESTING.md).
+
 ## Agent Skill Files
 
 The `skills/` directory contains copy-pasteable integration surfaces for different agent runtimes:

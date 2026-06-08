@@ -9,28 +9,130 @@ from unittest.mock import MagicMock, patch
 import cybernative_connect as connect
 
 
-class LoadCredentialsFileTest(unittest.TestCase):
-    def test_missing_file_raises(self) -> None:
-        with self.assertRaises(FileNotFoundError):
-            connect.load_credentials_file("definitely_missing_creds.json")
+class BuildAuthUrlTest(unittest.TestCase):
+    def test_output_contains_expected_params(self) -> None:
+        url = connect.build_auth_url(
+            base_url="https://cybernative.ai",
+            app_name="TestApp",
+            scopes="read",
+            client_id="cid-1",
+            public_key_pem="-----BEGIN PUBLIC KEY-----",
+            auth_redirect="http://127.0.0.1:8787/callback",
+            nonce="nonce123",
+        )
+        self.assertIn("cybernative.ai/user-api-key/new", url)
+        self.assertIn("application_name=TestApp", url)
+        self.assertIn("client_id=cid-1", url)
+        self.assertIn("scopes=read", url)
+        self.assertIn("nonce=nonce123", url)
 
-    def test_placeholder_fields_raise(self) -> None:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            path = Path(tmpdir) / "creds.json"
-            path.write_text(
-                json.dumps(
-                    {
-                        "base_url": "https://cybernative.ai",
-                        "user_api_key": "<user_api_key>",
-                        "user_api_client_id": "client-1",
-                    }
-                ),
-                encoding="utf-8",
-            )
-            with self.assertRaises(ValueError):
-                connect.load_credentials_file(str(path))
+    def test_base_url_trailing_slash_is_handled(self) -> None:
+        url = connect.build_auth_url(
+            base_url="https://cybernative.ai/",
+            app_name="X",
+            scopes="read",
+            client_id="c",
+            public_key_pem="k",
+            auth_redirect="http://127.0.0.1:8787/cb",
+            nonce="n",
+        )
+        self.assertIn("cybernative.ai/user-api-key/new?", url)
 
-    def test_valid_file_loads(self) -> None:
+
+class MaskSecretTest(unittest.TestCase):
+    def test_long_secret_is_masked(self) -> None:
+        result = connect.mask_secret("abcdefghijklmnopqrstuvwxyz123456", visible=4)
+        self.assertEqual(result, "abcd...3456")
+
+    def test_short_secret_is_hidden(self) -> None:
+        result = connect.mask_secret("short", visible=4)
+        self.assertEqual(result, "<hidden>")
+
+    def test_exact_double_visible_is_hidden(self) -> None:
+        result = connect.mask_secret("12345678", visible=4)
+        self.assertEqual(result, "<hidden>")
+
+
+class ExtractUserKeyTest(unittest.TestCase):
+    def test_extracts_key_field(self) -> None:
+        key = connect.extract_user_key({"key": "my-api-key"})
+        self.assertEqual(key, "my-api-key")
+
+    def test_extracts_user_api_key_field(self) -> None:
+        key = connect.extract_user_key({"user_api_key": "my-key"})
+        self.assertEqual(key, "my-key")
+
+    def test_extracts_api_key_field(self) -> None:
+        key = connect.extract_user_key({"api_key": "my-key"})
+        self.assertEqual(key, "my-key")
+
+    def test_raises_when_no_key_found(self) -> None:
+        with self.assertRaises(RuntimeError) as ctx:
+            connect.extract_user_key({"other": "value"})
+        self.assertIn("Could not locate", str(ctx.exception))
+
+    def test_raises_when_key_is_not_string(self) -> None:
+        with self.assertRaises(RuntimeError):
+            connect.extract_user_key({"key": 12345})
+
+
+class ValidateNonceTest(unittest.TestCase):
+    def test_matching_nonce_passes(self) -> None:
+        connect.validate_nonce({"nonce": "abc123"}, "abc123")
+
+    def test_mismatched_nonce_raises(self) -> None:
+        with self.assertRaises(RuntimeError) as ctx:
+            connect.validate_nonce({"nonce": "abc123"}, "xyz789")
+        self.assertIn("did not match", str(ctx.exception))
+
+    def test_missing_nonce_raises(self) -> None:
+        with self.assertRaises(RuntimeError) as ctx:
+            connect.validate_nonce({"other": "val"}, "abc123")
+        self.assertIn("did not include", str(ctx.exception))
+
+    def test_non_string_nonce_raises(self) -> None:
+        with self.assertRaises(RuntimeError):
+            connect.validate_nonce({"nonce": 12345}, "abc123")
+
+
+class DecryptPayloadErrorsTest(unittest.TestCase):
+    def test_non_base64_payload_raises(self) -> None:
+        from Cryptodome.PublicKey import RSA
+
+        rsa_key = RSA.generate(2048)
+        with self.assertRaises(RuntimeError) as ctx:
+            connect.decrypt_payload(rsa_key, "!!!not-valid-base64!!!")
+        self.assertIn("not valid base64", str(ctx.exception))
+
+    def test_garbage_ciphertext_raises(self) -> None:
+        import base64
+
+        from Cryptodome.PublicKey import RSA
+
+        rsa_key = RSA.generate(2048)
+        garbage = base64.b64encode(b"\x00" * 256).decode("ascii")
+        with self.assertRaises(RuntimeError) as ctx:
+            connect.decrypt_payload(rsa_key, garbage)
+        self.assertIn("Could not decrypt", str(ctx.exception))
+
+
+class CyberNativeAgentCredsTest(unittest.TestCase):
+    def test_headers_returns_expected_dict(self) -> None:
+        creds = connect.CyberNativeAgentCreds(
+            base_url="https://cybernative.ai",
+            user_api_key="my-key",
+            user_api_client_id="client-1",
+            scopes_requested="read",
+            issued_at_utc="2026-06-01T00:00:00Z",
+        )
+        headers = creds.headers()
+        self.assertEqual(headers["User-Api-Key"], "my-key")
+        self.assertEqual(headers["User-Api-Client-Id"], "client-1")
+        self.assertEqual(headers["Accept"], "application/json")
+
+
+class LoadCredentialsFileMissingFieldsTest(unittest.TestCase):
+    def test_missing_user_api_client_id_raises(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "creds.json"
             path.write_text(
@@ -38,14 +140,13 @@ class LoadCredentialsFileTest(unittest.TestCase):
                     {
                         "base_url": "https://cybernative.ai",
                         "user_api_key": "secret-key",
-                        "user_api_client_id": "client-1",
                     }
                 ),
                 encoding="utf-8",
             )
-            creds = connect.load_credentials_file(str(path))
-            self.assertEqual(creds.base_url, "https://cybernative.ai")
-            self.assertEqual(creds.user_api_key, "secret-key")
+            with self.assertRaises(ValueError) as ctx:
+                connect.load_credentials_file(str(path))
+            self.assertIn("user_api_client_id", str(ctx.exception))
 
 
 class ProbePublicSmokeTest(unittest.TestCase):

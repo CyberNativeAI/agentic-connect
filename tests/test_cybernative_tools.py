@@ -151,6 +151,142 @@ class CyberNativeClientTest(unittest.TestCase):
             ],
         )
 
+    @patch.object(CyberNativeClient, "_request")
+    def test_get_latest_topics_truncates_to_limit(self, request) -> None:
+        client = self.make_client()
+        request.return_value = {
+            "topic_list": {
+                "topics": [
+                    {"id": 1, "title": "A"},
+                    {"id": 2, "title": "B"},
+                    {"id": 3, "title": "C"},
+                    {"id": 4, "title": "D"},
+                    {"id": 5, "title": "E"},
+                ]
+            }
+        }
+
+        topics = client.get_latest_topics(limit=3)
+
+        request.assert_called_once_with("GET", "/latest.json")
+        self.assertEqual(len(topics), 3)
+        self.assertEqual(topics[0]["title"], "A")
+
+    @patch.object(CyberNativeClient, "_request")
+    def test_get_categories_uses_categories_endpoint(self, request) -> None:
+        client = self.make_client()
+        request.return_value = {"category_list": {"categories": [{"id": 1, "name": "General"}]}}
+
+        cats = client.get_categories()
+
+        request.assert_called_once_with("GET", "/categories.json")
+        self.assertEqual(cats, [{"id": 1, "name": "General"}])
+
+    @patch.object(CyberNativeClient, "_request")
+    def test_create_topic_posts_to_posts_endpoint(self, request) -> None:
+        client = self.make_client()
+
+        client.create_topic("Test Title", "Test content", category_id=31)
+
+        request.assert_called_once_with(
+            "POST",
+            "/posts.json",
+            headers={
+                "User-Api-Key": "test-api-key",
+                "User-Api-Client-Id": "test-client-id",
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            },
+            json={"title": "Test Title", "raw": "Test content", "category": 31},
+        )
+
+    @patch.object(CyberNativeClient, "_request")
+    def test_reply_to_topic_posts_to_posts_endpoint(self, request) -> None:
+        client = self.make_client()
+
+        client.reply_to_topic(topic_id=123, message="Hello world")
+
+        request.assert_called_once_with(
+            "POST",
+            "/posts.json",
+            headers={
+                "User-Api-Key": "test-api-key",
+                "User-Api-Client-Id": "test-client-id",
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            },
+            json={"topic_id": 123, "raw": "Hello world"},
+        )
+
+    @patch.object(CyberNativeClient, "_request")
+    def test_search_uses_search_endpoint(self, request) -> None:
+        client = self.make_client()
+
+        client.search("hello world")
+
+        request.assert_called_once_with("GET", "/search.json", params={"q": "hello world"})
+
+    @patch.object(CyberNativeClient, "_request")
+    def test_mark_notification_read_all_sends_empty_payload(self, request) -> None:
+        client = self.make_client()
+
+        client.mark_notification_read()
+
+        request.assert_called_once_with(
+            "PUT",
+            "/notifications/mark-read.json",
+            headers={
+                "User-Api-Key": "test-api-key",
+                "User-Api-Client-Id": "test-client-id",
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            },
+            json={},
+        )
+
+    @patch("cybernative_tools.requests.request")
+    def test_request_raises_api_error_on_non_ok(self, mock_request) -> None:
+        from cybernative_tools import CyberNativeAPIError
+
+        client = self.make_client()
+        mock_response = unittest.mock.MagicMock()
+        mock_response.ok = False
+        mock_response.status_code = 404
+        mock_response.reason = "Not Found"
+        mock_response.json.side_effect = ValueError("no json")
+        mock_response.text = "not found"
+        mock_request.return_value = mock_response
+
+        with self.assertRaises(CyberNativeAPIError) as ctx:
+            client._request("GET", "/missing.json")
+
+        self.assertIn("404", str(ctx.exception))
+
+    @patch("cybernative_tools.requests.request")
+    def test_request_retries_retryable_status_then_succeeds(self, mock_request) -> None:
+        client = self.make_client()
+        client.max_retries = 1
+
+        fail_response = unittest.mock.MagicMock()
+        fail_response.ok = False
+        fail_response.status_code = 429
+        fail_response.headers = {}
+        fail_response.reason = "Too Many Requests"
+        fail_response.json.side_effect = ValueError("no json")
+        fail_response.text = "rate limited"
+
+        ok_response = unittest.mock.MagicMock()
+        ok_response.ok = True
+        ok_response.raise_for_status = unittest.mock.MagicMock()
+        ok_response.json.return_value = {"topic_list": {"topics": [{"id": 1}]}}
+
+        mock_request.side_effect = [fail_response, ok_response]
+
+        result = client.get_latest_topics(limit=5)
+
+        self.assertEqual(mock_request.call_count, 2)
+        self.assertEqual(result, [{"id": 1}])
+
 
 if __name__ == "__main__":
     unittest.main()
