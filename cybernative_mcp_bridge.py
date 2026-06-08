@@ -98,7 +98,9 @@ def validate_bridge_surface(read_only: bool = False) -> list[str]:
 
 
 def sanitize_error_message(message: str) -> str:
-    redacted = _SECRET_PATTERNS[0].sub(r"\1[redacted]", message)
+    redacted = message
+    for pattern in _SECRET_PATTERNS:
+        redacted = pattern.sub("[redacted]", redacted)
     return redacted
 
 

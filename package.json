@@ -13,7 +13,9 @@
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "py -3 -m unittest discover -s tests -v",
+    "validate": "py -3 scripts/_ce_skill_validate.py",
+    "probe": "py -3 cybernative_connect.py --probe-public"
   },
   "repository": {
     "type": "git",
@@ -21,7 +23,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "type": "commonjs",
   "bugs": {
     "url": "https://github.com/CyberNativeAI/agentic-connect/issues"

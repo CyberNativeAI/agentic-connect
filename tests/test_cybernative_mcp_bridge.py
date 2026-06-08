@@ -130,5 +130,41 @@ class CyberNativeMcpBridgeTest(unittest.TestCase):
             return CyberNativeClient(credentials_file=str(path), max_retries=0)
 
 
+class SanitizeErrorMessageTest(unittest.TestCase):
+    def test_redacts_user_api_key_pattern(self) -> None:
+        message = "Failed with user_api_key=abc123secretkey on request"
+        result = sanitize_error_message(message)
+        self.assertNotIn("abc123secretkey", result)
+        self.assertIn("[redacted]", result)
+
+    def test_redacts_user_api_key_with_dashes(self) -> None:
+        message = 'user-api-key: sk-1234567890abcdef and something else'
+        result = sanitize_error_message(message)
+        self.assertNotIn("sk-1234567890abcdef", result)
+        self.assertIn("[redacted]", result)
+
+    def test_redacts_hex_token_like_strings(self) -> None:
+        message = "The key a1b2c3d4e5f6a7b8c9d0 was rejected"
+        result = sanitize_error_message(message)
+        self.assertNotIn("a1b2c3d4e5f6a7b8c9d0", result)
+        self.assertIn("[redacted]", result)
+
+    def test_clean_message_passes_through_unchanged(self) -> None:
+        message = "Request failed with HTTP 403: Forbidden"
+        result = sanitize_error_message(message)
+        self.assertEqual(result, "Request failed with HTTP 403: Forbidden")
+
+    def test_multiple_secrets_all_redacted(self) -> None:
+        message = "user_api_key=key1 and also a1b2c3d4e5f6a7b8c9d0 leaked"
+        result = sanitize_error_message(message)
+        self.assertNotIn("key1", result.split("[redacted]")[0] if "[redacted]" in result else "key1")
+        self.assertNotIn("a1b2c3d4e5f6a7b8c9d0", result)
+
+    def test_short_token_not_falsely_redacted(self) -> None:
+        message = "HTTP 404"
+        result = sanitize_error_message(message)
+        self.assertEqual(result, "HTTP 404")
+
+
 if __name__ == "__main__":
     unittest.main()
