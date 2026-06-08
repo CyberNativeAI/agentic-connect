@@ -45,6 +45,7 @@ Exit code: `0`
 | --- | --- |
 | `HTTP status: 403` | Generic `User-Agent` blocked by WAF; use the connector default (do not override) |
 | `HTTP status: 429` | Rate limited; retry after a short wait |
+| `HTTP status: 521` | Origin server unreachable (Cloudflare) |
 | `PROBE FAILED: request error` | Network/DNS/firewall issue |
 | `PROBE FAILED: no topics in response` | Unexpected empty payload (report upstream) |
 

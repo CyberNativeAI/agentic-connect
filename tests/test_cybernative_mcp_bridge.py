@@ -4,17 +4,19 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch
 
+import cybernative_mcp_bridge
 import cybernative_mcp_server
 from cybernative_mcp_bridge import (
     READ_ONLY_TOOL_NAMES,
     dispatch_tool,
     load_mcp_tool_catalog,
     mcp_tool_specs,
+    public_client_method_names,
     sanitize_error_message,
     tool_to_method_name,
     validate_bridge_surface,
 )
-from cybernative_tools import CyberNativeClient
+from cybernative_tools import CyberNativeClient, CyberNativeConfigurationError, CyberNativeAPIError
 
 
 class CyberNativeMcpBridgeTest(unittest.TestCase):
@@ -166,5 +168,134 @@ class SanitizeErrorMessageTest(unittest.TestCase):
         self.assertEqual(result, "HTTP 404")
 
 
-if __name__ == "__main__":
-    unittest.main()
+class PublicClientMethodNamesTest(unittest.TestCase):
+    def test_returns_set_of_public_methods(self) -> None:
+        methods = public_client_method_names()
+        self.assertIsInstance(methods, set)
+        self.assertIn("get_latest_topics", methods)
+        self.assertIn("create_topic", methods)
+        self.assertIn("get_topic_url", methods)
+        self.assertNotIn("_request", methods)
+        self.assertNotIn("_load_credentials", methods)
+
+    def test_all_method_names_are_strings(self) -> None:
+        methods = public_client_method_names()
+        for name in methods:
+            self.assertIsInstance(name, str)
+
+
+class ValidateBridgeSurfaceErrorsTest(unittest.TestCase):
+    @patch.object(cybernative_mcp_bridge, "mcp_tool_specs")
+    @patch.object(cybernative_mcp_bridge, "public_client_method_names")
+    def test_missing_client_method_reported(self, mock_methods, mock_specs) -> None:
+        mock_specs.return_value = [
+            {"name": "cybernative_get_latest_topics", "inputSchema": {"type": "object"}},
+            {"name": "cybernative_nonexistent_method", "inputSchema": {"type": "object"}},
+        ]
+        mock_methods.return_value = {"get_latest_topics"}
+        errors = validate_bridge_surface()
+        self.assertEqual(len(errors), 1)
+        self.assertIn("nonexistent_method", errors[0])
+
+    @patch.object(cybernative_mcp_bridge, "mcp_tool_specs")
+    @patch.object(cybernative_mcp_bridge, "public_client_method_names")
+    def test_missing_input_schema_reported(self, mock_methods, mock_specs) -> None:
+        mock_specs.return_value = [
+            {"name": "cybernative_get_latest_topics"},
+        ]
+        mock_methods.return_value = {"get_latest_topics"}
+        errors = validate_bridge_surface()
+        self.assertEqual(len(errors), 1)
+        self.assertIn("inputSchema", errors[0])
+
+    @patch.object(cybernative_mcp_bridge, "mcp_tool_specs")
+    @patch.object(cybernative_mcp_bridge, "public_client_method_names")
+    def test_missing_tools_for_client_methods_reported(self, mock_methods, mock_specs) -> None:
+        mock_specs.return_value = [
+            {"name": "cybernative_get_latest_topics", "inputSchema": {"type": "object"}},
+        ]
+        mock_methods.return_value = {"get_latest_topics", "create_topic"}
+        errors = validate_bridge_surface()
+        self.assertEqual(len(errors), 1)
+        self.assertIn("cybernative_create_topic", errors[0])
+
+    @patch.object(cybernative_mcp_bridge, "mcp_tool_specs")
+    @patch.object(cybernative_mcp_bridge, "public_client_method_names")
+    def test_read_only_mode_reports_unknown_tools(self, mock_methods, mock_specs) -> None:
+        mock_specs.return_value = [
+            {"name": "cybernative_get_latest_topics", "inputSchema": {"type": "object"}},
+        ]
+        mock_methods.return_value = {"get_latest_topics"}
+        errors = validate_bridge_surface(read_only=True)
+        self.assertGreater(len(errors), 0)
+
+    @patch.object(cybernative_mcp_bridge, "mcp_tool_specs")
+    @patch.object(cybernative_mcp_bridge, "public_client_method_names")
+    def test_bad_prefix_tool_name_reported(self, mock_methods, mock_specs) -> None:
+        mock_specs.return_value = [
+            {"name": "bad_prefix_get_topics", "inputSchema": {"type": "object"}},
+        ]
+        mock_methods.return_value = set()
+        errors = validate_bridge_surface()
+        self.assertEqual(len(errors), 1)
+        self.assertIn("unexpected MCP tool name", errors[0])
+
+
+class DispatchToolEdgeCasesTest(unittest.TestCase):
+    def make_client(self) -> CyberNativeClient:
+        creds = {
+            "base_url": "https://cybernative.ai/",
+            "user_api_key": "test-api-key",
+            "user_api_client_id": "test-client-id",
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "creds.json"
+            path.write_text(json.dumps(creds), encoding="utf-8")
+            return CyberNativeClient(credentials_file=str(path), max_retries=0)
+
+    def test_arguments_none_is_coerced_to_empty_dict(self) -> None:
+        client = self.make_client()
+        with patch.object(CyberNativeClient, "get_latest_topics", return_value=[{"id": 1}]) as mocked:
+            result = dispatch_tool(client, "cybernative_get_latest_topics", None)
+            self.assertEqual(result, [{"id": 1}])
+            mocked.assert_called_once_with()
+
+
+class McpServerValidateFailureTest(unittest.TestCase):
+    @patch.object(cybernative_mcp_server, "validate_bridge_surface", return_value=["error one", "error two"])
+    @patch.object(cybernative_mcp_server, "mcp_tool_specs", return_value=[{"name": "cybernative_get_latest_topics", "inputSchema": {}}])
+    def test_validate_reports_errors_as_exit_one(self, mock_specs, mock_validate) -> None:
+        code = cybernative_mcp_server.run_validate()
+        self.assertEqual(code, 1)
+
+    @patch.object(cybernative_mcp_server, "validate_bridge_surface", return_value=[])
+    @patch.object(cybernative_mcp_server, "mcp_tool_specs", return_value=[{"name": "cybernative_get_latest_topics", "inputSchema": {}}])
+    def test_validate_clean_returns_zero(self, mock_specs, mock_validate) -> None:
+        code = cybernative_mcp_server.run_validate()
+        self.assertEqual(code, 0)
+
+
+class McpToolSpecsEdgeCasesTest(unittest.TestCase):
+    @patch.object(cybernative_mcp_bridge, "load_mcp_tool_catalog")
+    def test_filters_non_dict_tools(self, mock_load) -> None:
+        mock_load.return_value = {
+            "tools": [
+                {"name": "cybernative_get_latest_topics", "inputSchema": {}},
+                "not-a-dict",
+                None,
+                {"name": "cybernative_read_topic", "inputSchema": {}},
+            ]
+        }
+        specs = mcp_tool_specs()
+        self.assertEqual(len(specs), 2)
+
+    @patch.object(cybernative_mcp_bridge, "load_mcp_tool_catalog")
+    def test_filters_tools_without_name(self, mock_load) -> None:
+        mock_load.return_value = {
+            "tools": [
+                {"name": "cybernative_get_latest_topics", "inputSchema": {}},
+                {"inputSchema": {}},
+            ]
+        }
+        specs = mcp_tool_specs()
+        self.assertEqual(len(specs), 1)

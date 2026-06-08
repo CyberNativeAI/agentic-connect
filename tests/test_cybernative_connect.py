@@ -1,4 +1,5 @@
 import json
+import os
 import tempfile
 import unittest
 from contextlib import redirect_stdout
@@ -133,8 +134,57 @@ class CyberNativeAgentCredsTest(unittest.TestCase):
         self.assertEqual(headers["Accept"], "application/json")
 
 
-class LoadCredentialsFileMissingFieldsTest(unittest.TestCase):
-    def test_missing_user_api_client_id_raises(self) -> None:
+class LoadCredentialsFileTest(unittest.TestCase):
+    def test_success_loads_valid_credentials(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "creds.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "base_url": "https://cybernative.ai",
+                        "user_api_key": "secret-key",
+                        "user_api_client_id": "client-1",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            creds = connect.load_credentials_file(str(path))
+            self.assertEqual(creds.base_url, "https://cybernative.ai")
+            self.assertEqual(creds.user_api_key, "secret-key")
+            self.assertEqual(creds.user_api_client_id, "client-1")
+
+    def test_success_strips_trailing_slash(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "creds.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "base_url": "https://cybernative.ai/",
+                        "user_api_key": "secret-key",
+                        "user_api_client_id": "client-1",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            creds = connect.load_credentials_file(str(path))
+            self.assertEqual(creds.base_url, "https://cybernative.ai")
+
+    def test_file_not_found_raises(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "nonexistent.json"
+            with self.assertRaises(FileNotFoundError) as ctx:
+                connect.load_credentials_file(str(path))
+            self.assertIn("not found", str(ctx.exception))
+
+    def test_invalid_json_raises(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "creds.json"
+            path.write_text("not valid json", encoding="utf-8")
+            with self.assertRaises(ValueError) as ctx:
+                connect.load_credentials_file(str(path))
+            self.assertIn("not valid JSON", str(ctx.exception))
+
+    def test_missing_required_fields_raises(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "creds.json"
             path.write_text(
@@ -149,6 +199,252 @@ class LoadCredentialsFileMissingFieldsTest(unittest.TestCase):
             with self.assertRaises(ValueError) as ctx:
                 connect.load_credentials_file(str(path))
             self.assertIn("user_api_client_id", str(ctx.exception))
+
+    def test_missing_multiple_fields_raises(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "creds.json"
+            path.write_text(json.dumps({}), encoding="utf-8")
+            with self.assertRaises(ValueError) as ctx:
+                connect.load_credentials_file(str(path))
+            self.assertIn("base_url", str(ctx.exception))
+            self.assertIn("user_api_key", str(ctx.exception))
+
+    def test_placeholder_field_raises(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "creds.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "base_url": "https://cybernative.ai",
+                        "user_api_key": "<replace-me>",
+                        "user_api_client_id": "client-1",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaises(ValueError) as ctx:
+                connect.load_credentials_file(str(path))
+            self.assertIn("placeholder", str(ctx.exception))
+
+    def test_optional_fields_default_to_empty(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "creds.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "base_url": "https://cybernative.ai",
+                        "user_api_key": "secret-key",
+                        "user_api_client_id": "client-1",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            creds = connect.load_credentials_file(str(path))
+            self.assertEqual(creds.scopes_requested, "")
+            self.assertEqual(creds.issued_at_utc, "")
+
+    def test_reads_scopes_and_issued_at(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "creds.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "base_url": "https://cybernative.ai",
+                        "user_api_key": "secret-key",
+                        "user_api_client_id": "client-1",
+                        "scopes_requested": "read,write",
+                        "issued_at_utc": "2026-06-01T00:00:00Z",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            creds = connect.load_credentials_file(str(path))
+            self.assertEqual(creds.scopes_requested, "read,write")
+            self.assertEqual(creds.issued_at_utc, "2026-06-01T00:00:00Z")
+
+
+class CallbackHandlerTest(unittest.TestCase):
+    def setUp(self) -> None:
+        connect._CALLBACK.clear()
+
+    def _make_handler(self, path: str) -> connect.CallbackHandler:
+        handler = connect.CallbackHandler.__new__(connect.CallbackHandler)
+        handler.path = path
+        handler.client_address = ("127.0.0.1", 8787)
+        handler.server = MagicMock()
+        handler.server.callback_path = "/callback"
+        handler.wfile = MagicMock()
+        handler.send_response = MagicMock()
+        handler.end_headers = MagicMock()
+        return handler
+
+    def test_valid_path_with_payload_sets_callback(self) -> None:
+        handler = self._make_handler("/callback?payload=test-payload")
+        handler.do_GET()
+        self.assertEqual(connect._CALLBACK["payload"], "test-payload")
+
+    def test_wrong_path_returns_404(self) -> None:
+        handler = self._make_handler("/wrong-path")
+        handler.do_GET()
+        self.assertEqual(handler.send_response.call_args[0][0], 404)
+
+    def test_missing_payload_returns_400(self) -> None:
+        handler = self._make_handler("/callback")
+        handler.do_GET()
+        self.assertEqual(handler.send_response.call_args[0][0], 400)
+
+    def test_log_message_suppressed(self) -> None:
+        handler = self._make_handler("/callback")
+        handler.log_message("GET", "/callback", 200, 0)
+
+
+class IsoUtcNowTest(unittest.TestCase):
+    def test_returns_iso_8601_format(self) -> None:
+        result = connect.iso_utc_now()
+        self.assertRegex(result, r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+
+    def test_ends_with_z(self) -> None:
+        result = connect.iso_utc_now()
+        self.assertTrue(result.endswith("Z"))
+
+
+class SaveJsonTest(unittest.TestCase):
+    def test_writes_file_with_correct_content(self) -> None:
+        obj = {"key": "value", "nested": {"a": 1}}
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = str(Path(tmpdir) / "test.json")
+            connect.save_json(path, obj)
+            self.assertTrue(os.path.isfile(path))
+            with open(path, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+            self.assertEqual(loaded, obj)
+
+    def test_file_ends_with_newline(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = str(Path(tmpdir) / "test.json")
+            connect.save_json(path, {"a": 1})
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+            self.assertTrue(content.endswith("\n"))
+
+    def test_indent_is_2(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = str(Path(tmpdir) / "test.json")
+            connect.save_json(path, {"a": 1})
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+            self.assertIn('  "a"', content)
+
+
+class ExampleReadLatestTest(unittest.TestCase):
+    @patch("cybernative_connect.requests.get")
+    def test_returns_topic_count(self, mock_get) -> None:
+        mock_get.return_value = MagicMock(
+            ok=True,
+            raise_for_status=MagicMock(),
+            json=MagicMock(
+                return_value={
+                    "topic_list": {
+                        "topics": [
+                            {"title": "A", "slug": "a", "id": 1},
+                            {"title": "B", "slug": "b", "id": 2},
+                        ]
+                    }
+                }
+            ),
+        )
+        creds = connect.CyberNativeAgentCreds(
+            base_url="https://cybernative.ai",
+            user_api_key="key",
+            user_api_client_id="client",
+            scopes_requested="read",
+            issued_at_utc="2026-06-01T00:00:00Z",
+        )
+
+        count = connect.example_read_latest(creds, limit=2)
+
+        self.assertEqual(count, 2)
+        mock_get.assert_called_once()
+        self.assertIn("/latest.json", mock_get.call_args.args[0])
+
+    @patch("cybernative_connect.requests.get")
+    def test_handles_empty_topics(self, mock_get) -> None:
+        mock_get.return_value = MagicMock(
+            ok=True,
+            raise_for_status=MagicMock(),
+            json=MagicMock(return_value={"topic_list": {"topics": []}}),
+        )
+        creds = connect.CyberNativeAgentCreds(
+            base_url="https://cybernative.ai",
+            user_api_key="key",
+            user_api_client_id="client",
+            scopes_requested="read",
+            issued_at_utc="2026-06-01T00:00:00Z",
+        )
+
+        count = connect.example_read_latest(creds)
+
+        self.assertEqual(count, 0)
+
+
+class DecryptPayloadSuccessTest(unittest.TestCase):
+    def test_roundtrip_decrypts_valid_payload(self) -> None:
+        import base64
+        import urllib.parse
+
+        from Cryptodome.Cipher import PKCS1_v1_5
+        from Cryptodome.PublicKey import RSA
+
+        rsa_key = RSA.generate(2048)
+        cipher = PKCS1_v1_5.new(rsa_key.publickey())
+        plaintext = json.dumps({"key": "my-secret-api-key", "nonce": "nonce123"}).encode("utf-8")
+        ciphertext = cipher.encrypt(plaintext)
+        payload_param = urllib.parse.quote(base64.b64encode(ciphertext).decode("ascii"))
+
+        result = connect.decrypt_payload(rsa_key, payload_param)
+
+        self.assertEqual(result["key"], "my-secret-api-key")
+        self.assertEqual(result["nonce"], "nonce123")
+
+    def test_decrypted_payload_not_valid_json_raises(self) -> None:
+        import base64
+        import urllib.parse
+
+        from Cryptodome.Cipher import PKCS1_v1_5
+        from Cryptodome.PublicKey import RSA
+
+        rsa_key = RSA.generate(2048)
+        cipher = PKCS1_v1_5.new(rsa_key.publickey())
+        ciphertext = cipher.encrypt(b"not json")
+        payload_param = urllib.parse.quote(base64.b64encode(ciphertext).decode("ascii"))
+
+        with self.assertRaises(RuntimeError) as ctx:
+            connect.decrypt_payload(rsa_key, payload_param)
+        self.assertIn("not valid JSON", str(ctx.exception))
+
+
+class ExtractUserKeyPriorityTest(unittest.TestCase):
+    def test_prefers_key_over_user_api_key(self) -> None:
+        key = connect.extract_user_key({"key": "key-field", "user_api_key": "uak-field"})
+        self.assertEqual(key, "key-field")
+
+    def test_falls_back_to_user_api_key_when_key_is_not_string(self) -> None:
+        key = connect.extract_user_key({"key": 12345, "user_api_key": "uak-field"})
+        self.assertEqual(key, "uak-field")
+
+    def test_falls_back_to_api_key_when_others_not_present(self) -> None:
+        key = connect.extract_user_key({"api_key": "ak-field"})
+        self.assertEqual(key, "ak-field")
+
+
+class WaitForPayloadTest(unittest.TestCase):
+    def setUp(self) -> None:
+        connect._CALLBACK.clear()
+
+    def test_returns_payload_when_set(self) -> None:
+        connect._CALLBACK["payload"] = "test-value"
+        result = connect.wait_for_payload(timeout_s=1)
+        self.assertEqual(result, "test-value")
 
 
 class ProbePublicSmokeTest(unittest.TestCase):

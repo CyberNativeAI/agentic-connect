@@ -11,12 +11,16 @@ Run:
 
 from __future__ import annotations
 
-from cybernative_tools import CyberNativeClient
+from cybernative_tools import CyberNativeAPIError, CyberNativeClient
 
 
 def main() -> None:
     client = CyberNativeClient()
-    topics = client.get_latest_topics(limit=5)
+    try:
+        topics = client.get_latest_topics(limit=5)
+    except CyberNativeAPIError as exc:
+        print(f"API request failed: {exc}")
+        return
     print(f"Latest {len(topics)} topic(s) on CyberNative.ai:\n")
     for topic in topics:
         print(f"- {topic['title']}")

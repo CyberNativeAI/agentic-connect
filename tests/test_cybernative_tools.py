@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from cybernative_tools import CyberNativeClient, CyberNativeAPIError
+from cybernative_tools import CyberNativeClient, CyberNativeAPIError, CyberNativeConfigurationError
 import cybernative_tools as ct
 
 
@@ -423,6 +423,152 @@ class RetryBehaviorTest(unittest.TestCase):
 
         mock_sleep.assert_any_call(1)
         mock_sleep.assert_any_call(2)
+
+
+class LoadCredentialsTest(unittest.TestCase):
+    def test_file_not_found_raises_configuration_error(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = str(Path(tmpdir) / "nonexistent.json")
+            with self.assertRaises(CyberNativeConfigurationError) as ctx:
+                CyberNativeClient(credentials_file=path, max_retries=0)
+            self.assertIn("not found", str(ctx.exception))
+
+    def test_invalid_json_raises_configuration_error(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "creds.json"
+            path.write_text("not json", encoding="utf-8")
+            with self.assertRaises(CyberNativeConfigurationError) as ctx:
+                CyberNativeClient(credentials_file=str(path), max_retries=0)
+            self.assertIn("not valid JSON", str(ctx.exception))
+
+    def test_missing_required_field_raises_configuration_error(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "creds.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "base_url": "https://cybernative.ai",
+                        "user_api_key": "secret-key",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaises(CyberNativeConfigurationError) as ctx:
+                CyberNativeClient(credentials_file=str(path), max_retries=0)
+            self.assertIn("user_api_client_id", str(ctx.exception))
+
+    def test_placeholder_field_raises_configuration_error(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "creds.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "base_url": "https://cybernative.ai",
+                        "user_api_key": "<replace-me>",
+                        "user_api_client_id": "client-1",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaises(CyberNativeConfigurationError) as ctx:
+                CyberNativeClient(credentials_file=str(path), max_retries=0)
+            self.assertIn("placeholder", str(ctx.exception))
+
+    def test_base_url_missing_protocol_raises_configuration_error(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "creds.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "base_url": "cybernative.ai",
+                        "user_api_key": "secret-key",
+                        "user_api_client_id": "client-1",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaises(CyberNativeConfigurationError) as ctx:
+                CyberNativeClient(credentials_file=str(path), max_retries=0)
+            self.assertIn("must start with https:// or http://", str(ctx.exception))
+
+    def test_http_url_is_accepted(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "creds.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "base_url": "http://localhost:3000/",
+                        "user_api_key": "secret-key",
+                        "user_api_client_id": "client-1",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            client = CyberNativeClient(credentials_file=str(path), max_retries=0)
+            self.assertEqual(client.base_url, "http://localhost:3000")
+
+
+class ResponseDetailTest(unittest.TestCase):
+    def test_json_with_errors_key(self) -> None:
+        client = _make_bare_client()
+        resp = Mock()
+        resp.json.return_value = {"errors": ["Not found"]}
+        detail = client._response_detail(resp)
+        self.assertIn("Not found", detail)
+
+    def test_json_with_error_key(self) -> None:
+        client = _make_bare_client()
+        resp = Mock()
+        resp.json.return_value = {"error": "Bad request"}
+        detail = client._response_detail(resp)
+        self.assertEqual(detail, "Bad request")
+
+    def test_json_with_message_key(self) -> None:
+        client = _make_bare_client()
+        resp = Mock()
+        resp.json.return_value = {"message": "Unauthorized"}
+        detail = client._response_detail(resp)
+        self.assertEqual(detail, "Unauthorized")
+
+    def test_non_json_falls_back_to_text(self) -> None:
+        client = _make_bare_client()
+        resp = Mock()
+        resp.json.side_effect = ValueError
+        resp.text = "plain text error"
+        resp.reason = "Ignore reason"
+        detail = client._response_detail(resp)
+        self.assertEqual(detail, "plain text error")
+
+    def test_non_json_no_text_falls_back_to_reason(self) -> None:
+        client = _make_bare_client()
+        resp = Mock()
+        resp.json.side_effect = ValueError
+        resp.text = ""
+        resp.reason = "Not Found"
+        detail = client._response_detail(resp)
+        self.assertEqual(detail, "Not Found")
+
+
+class JsonRequestTest(unittest.TestCase):
+    def test_sets_content_type_header_and_json_body(self) -> None:
+        client = _make_bare_client()
+        with patch.object(client, "_request") as mock_req:
+            client._json_request("POST", "/test.json", {"key": "val"})
+            call_kwargs = mock_req.call_args.kwargs
+            self.assertEqual(call_kwargs["headers"]["Content-Type"], "application/json")
+            self.assertEqual(call_kwargs["json"], {"key": "val"})
+
+
+def _make_bare_client() -> CyberNativeClient:
+    creds = {
+        "base_url": "https://cybernative.ai/",
+        "user_api_key": "test-api-key",
+        "user_api_client_id": "test-client-id",
+    }
+    with tempfile.TemporaryDirectory() as tmpdir:
+        path = Path(tmpdir) / "creds.json"
+        path.write_text(json.dumps(creds), encoding="utf-8")
+        return CyberNativeClient(credentials_file=str(path), max_retries=0)
 
 
 class SingletonConvenienceTest(unittest.TestCase):
