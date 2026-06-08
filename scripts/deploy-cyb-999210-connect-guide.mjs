@@ -24,50 +24,62 @@ function getSecret(key) {
   return execSync(`node get-secret.mjs ${key}`, { cwd: p, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
 }
 
-function createSshAskpass(sshPass) {
-  const ps1File = join(tmpdir(), 'ssh-askpass.ps1');
-  const encoded = Buffer.from(sshPass, 'utf8').toString('base64');
-  writeFileSync(ps1File,
-    `$pwd = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${encoded}'))\nWrite-Output $pwd\n`, 'utf8');
-  return ps1File;
+function getSshIdentity() {
+  const cred = getSecret('prod_ssh_root');
+  if (cred.startsWith('-----BEGIN')) {
+    const keyFile = join(tmpdir(), 'ssh-key-deploy');
+    writeFileSync(keyFile, cred + '\n', { encoding: 'utf8', mode: 0o600 });
+    return { type: 'key', keyFile };
+  }
+  return { type: 'password', value: cred };
 }
 
 function sshExec(command, opts = {}) {
-  const sshPass = getSecret('prod_ssh_root');
-  const askpassScript = createSshAskpass(sshPass);
-  const env = {
-    ...process.env,
-    SSH_ASKPASS: `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "${askpassScript}"`,
-    DISPLAY: 'dummy',
-    SSH_ASKPASS_REQUIRE: 'force',
-  };
+  const identity = getSshIdentity();
+  let sshArgs = '-o StrictHostKeyChecking=no -o ConnectTimeout=10';
+  let env = { ...process.env };
+
+  if (identity.type === 'key') {
+    sshArgs += ` -i "${identity.keyFile}"`;
+  } else {
+    const askpassScript = createSshAskpass(identity.value);
+    env.SSH_ASKPASS = `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "${askpassScript}"`;
+    env.DISPLAY = 'dummy';
+    env.SSH_ASKPASS_REQUIRE = 'force';
+  }
+
   try {
     const result = execSync(
-      `ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 root@64.176.199.24 "${command.replace(/"/g, '\\"')}"`,
+      `ssh ${sshArgs} root@64.176.199.24 "${command.replace(/"/g, '\\"')}"`,
       { env, encoding: 'utf8', timeout: opts.timeout || 30000, stdio: ['pipe', 'pipe', 'pipe'] }
     );
     return result;
   } finally {
-    try { unlinkSync(askpassScript); } catch {}
+    if (identity.type === 'key') try { unlinkSync(identity.keyFile); } catch {}
   }
 }
 
 function scpFile(localPath, remotePath) {
-  const sshPass = getSecret('prod_ssh_root');
-  const askpassScript = createSshAskpass(sshPass);
-  const env = {
-    ...process.env,
-    SSH_ASKPASS: `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "${askpassScript}"`,
-    DISPLAY: 'dummy',
-    SSH_ASKPASS_REQUIRE: 'force',
-  };
+  const identity = getSshIdentity();
+  let scpArgs = '-o StrictHostKeyChecking=no';
+  let env = { ...process.env };
+
+  if (identity.type === 'key') {
+    scpArgs += ` -i "${identity.keyFile}"`;
+  } else {
+    const askpassScript = createSshAskpass(identity.value);
+    env.SSH_ASKPASS = `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "${askpassScript}"`;
+    env.DISPLAY = 'dummy';
+    env.SSH_ASKPASS_REQUIRE = 'force';
+  }
+
   try {
     execSync(
-      `scp -o StrictHostKeyChecking=no "${localPath}" root@64.176.199.24:"${remotePath}"`,
+      `scp ${scpArgs} "${localPath}" root@64.176.199.24:"${remotePath}"`,
       { env, encoding: 'utf8', timeout: 30000, stdio: ['pipe', 'pipe', 'pipe'] }
     );
   } finally {
-    try { unlinkSync(askpassScript); } catch {}
+    if (identity.type === 'key') try { unlinkSync(identity.keyFile); } catch {}
   }
 }
 
