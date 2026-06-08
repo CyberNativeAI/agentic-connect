@@ -14,9 +14,10 @@
 //   - Node.js >= 18
 
 import { execSync } from 'node:child_process';
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, unlinkSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { tmpdir } from 'node:os';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, '..');
@@ -43,25 +44,36 @@ function getSecret(key) {
   }
 }
 
+function getSshIdentity() {
+  const cred = getSecret('prod_ssh_root');
+  if (cred.startsWith('-----BEGIN')) {
+    const keyFile = join(tmpdir(), 'cyb-999451-ssh-key');
+    writeFileSync(keyFile, cred + '\n', { encoding: 'utf8', mode: 0o600 });
+    return { type: 'key', keyFile };
+  }
+  return { type: 'password', value: cred };
+}
+
 function sshExec(command) {
-  const batFile = join(process.env.TEMP, 'ssh-askpass-cyb999451.bat');
-  const sshPass = getSecret('prod_ssh_root');
-  writeFileSync(batFile, `@echo ${sshPass}`);
-
-  const env = {
-    ...process.env,
-    SSH_ASKPASS: batFile,
-    DISPLAY: 'dummy',
-    SSH_ASKPASS_REQUIRE: 'force',
-  };
-
+  const identity = getSshIdentity();
+  let sshArgs = '-o StrictHostKeyChecking=no -o ConnectTimeout=10';
+  let env = { ...process.env };
+  if (identity.type === 'key') {
+    sshArgs += ` -i "${identity.keyFile}"`;
+  } else {
+    const ps1 = join(tmpdir(), 'ssh-ap.ps1');
+    const enc = Buffer.from(identity.value, 'utf8').toString('base64');
+    writeFileSync(ps1, `$p=[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${enc}'));Write-Output $p`, 'utf8');
+    env.SSH_ASKPASS = `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "${ps1}"`;
+    env.DISPLAY = 'dummy'; env.SSH_ASKPASS_REQUIRE = 'force';
+  }
   try {
     return execSync(
-      `ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 root@64.176.199.24 "${command.replace(/"/g, '\\"')}"`,
+      `ssh ${sshArgs} root@64.176.199.24 "${command.replace(/"/g, '\\"')}"`,
       { env, encoding: 'utf8', timeout: 30_000 }
     );
   } finally {
-    try { require('fs').unlinkSync(batFile); } catch {}
+    if (identity.type === 'key') try { unlinkSync(identity.keyFile); } catch {}
   }
 }
 
@@ -196,21 +208,24 @@ async function deployViaSSH() {
 
   console.log(`Updated plugin.rb: ${updated.length} bytes`);
 
-  const tmpFile = join(process.env.TEMP, 'plugin-rb-cyb-999451.rb');
+  const tmpFile = join(tmpdir(), 'plugin-rb-cyb-999451.rb');
   writeFileSync(tmpFile, updated, 'utf8');
 
   console.log('\nUploading plugin.rb to production server...');
-  const scpPass = getSecret('prod_ssh_root');
-  const batFile = join(process.env.TEMP, 'ssh-askpass-cyb999451.bat');
-  writeFileSync(batFile, `@echo ${scpPass}`);
-
-  execSync(
-    `scp -o StrictHostKeyChecking=no "${tmpFile}" root@64.176.199.24:/var/discourse/shared/standalone/tmp/cybernative-seo-src/cybernative-seo/plugin.rb`,
-    {
-      env: { ...process.env, SSH_ASKPASS: batFile, DISPLAY: 'dummy', SSH_ASKPASS_REQUIRE: 'force' },
-      encoding: 'utf8', timeout: 30_000,
-    }
-  );
+  const identity = getSshIdentity();
+  let scpEnv = { ...process.env };
+  let scpArgs = '-o StrictHostKeyChecking=no';
+  if (identity.type === 'key') {
+    scpArgs += ` -i "${identity.keyFile}"`;
+  }
+  try {
+    execSync(
+      `scp ${scpArgs} "${tmpFile}" root@64.176.199.24:/var/discourse/shared/standalone/tmp/cybernative-seo-src/cybernative-seo/plugin.rb`,
+      { env: scpEnv, encoding: 'utf8', timeout: 30_000 }
+    );
+  } finally {
+    if (identity.type === 'key') try { unlinkSync(identity.keyFile); } catch {}
+  }
 
   console.log('Copying plugin into Discourse container...');
   sshExec(
