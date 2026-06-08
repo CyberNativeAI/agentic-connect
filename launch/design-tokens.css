@@ -33,6 +33,7 @@
 html.aurora-light,
 html[data-theme="light"] {
   --cn-ink: #0a0b0c;
+  --cn-ink-deep: #f0ede7;
   --cn-bone: #f5f2eb;
   --cn-bone-soft: #ebe6dc;
   --cn-mute: #5f5b52;
@@ -40,4 +41,7 @@ html[data-theme="light"] {
   --cn-rule-strong: #c8c2b6;
   --cn-card: #ffffff;
   --cn-card-2: #f9f7f2;
+  --cn-signal: #8a9c00;
+  --cn-signal-dim: #6e7d00;
+  --cn-ink-on-signal: #ffffff;
 }

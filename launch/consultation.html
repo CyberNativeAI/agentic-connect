@@ -93,12 +93,6 @@
         display: none;
       }
 
-      :focus-visible {
-        outline: 2px solid var(--cn-signal);
-        outline-offset: 2px;
-        border-radius: 2px;
-      }
-
       fieldset.wide {
         grid-column: 1 / -1;
       }
@@ -113,6 +107,7 @@
     </style>
   </head>
   <body data-offer-page="consultation">
+    <a class="skip-link" href="#main-content">Skip to content</a>
     <header class="site-header">
       <a class="brand" href="https://cybernative.ai/" aria-label="CyberNative home">
         <span class="brand-mark">CN</span>
@@ -125,7 +120,7 @@
       </nav>
     </header>
 
-    <main class="shell">
+    <main id="main-content" class="shell">
       <section class="hero" style="min-height:auto;padding-bottom:0">
         <div class="hero-copy">
           <p class="eyebrow">Agent Launch Concierge</p>
