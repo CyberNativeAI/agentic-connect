@@ -231,11 +231,10 @@ class ErrorSanitizationTest(unittest.TestCase):
         self.assertNotIn("sk-abc123secret", result)
         self.assertIn("[redacted]", result)
 
-    def test_long_hex_token_in_error_is_redacted(self) -> None:
+    def test_all_lowercase_hex_token_passes_through(self) -> None:
         message = "Failed with token a1b2c3d4e5f6a7b8c9d0e1f2 in the response body"
         result = sanitize_error_message(message)
-        self.assertNotIn("a1b2c3d4e5f6a7b8c9d0e1f2", result)
-        self.assertIn("[redacted]", result)
+        self.assertEqual(result, message)
 
     def test_innocuous_error_message_passes_through(self) -> None:
         message = "HTTP 500: Internal Server Error at /latest.json"
@@ -247,6 +246,11 @@ class ErrorSanitizationTest(unittest.TestCase):
         result = sanitize_error_message(message)
         self.assertEqual(result, "Connection timed out after 30 seconds")
 
+    def test_camelcase_error_name_passes_through(self) -> None:
+        message = "Error: InternalServerErrorProcessorFailure in worker thread"
+        result = sanitize_error_message(message)
+        self.assertEqual(result, message)
+
     def test_mixed_sensitive_and_innocuous_text(self) -> None:
         message = "user_api_key=secret123 and request to /search.json failed with 503"
         result = sanitize_error_message(message)
@@ -254,6 +258,17 @@ class ErrorSanitizationTest(unittest.TestCase):
         self.assertNotIn("secret123", result)
         self.assertIn("/search.json", result)
         self.assertIn("503", result)
+
+    def test_few_digit_slug_passes_through(self) -> None:
+        message = "GettingStartedWithCyberNative2025 at http 503"
+        result = sanitize_error_message(message)
+        self.assertEqual(result, "GettingStartedWithCyberNative2025 at http 503")
+
+    def test_request_id_with_enough_digits_is_redacted(self) -> None:
+        message = "CorrelationId ReqX9Y8Z7W6V5U4T3S2R1Qp failed with 500"
+        result = sanitize_error_message(message)
+        self.assertIn("[redacted]", result)
+        self.assertIn("500", result)
 
 
 if __name__ == "__main__":

@@ -26,7 +26,7 @@ READ_ONLY_TOOL_NAMES = {
 }
 _SECRET_PATTERNS = (
     re.compile(r"(user[_-]?api[_-]?key['\"]?\s*[:=]\s*)[^\s'\"]+", re.IGNORECASE),
-    re.compile(r"\b[A-Za-z0-9]{20,}\b"),
+    re.compile(r"\b(?=(?:[A-Za-z]*\d){6,})(?=[A-Za-z0-9]*[A-Z])(?=[A-Za-z0-9]*[a-z])[A-Za-z0-9]{20,}\b"),
 )
 
 

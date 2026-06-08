@@ -145,11 +145,10 @@ class SanitizeErrorMessageTest(unittest.TestCase):
         self.assertNotIn("sk-1234567890abcdef", result)
         self.assertIn("[redacted]", result)
 
-    def test_redacts_hex_token_like_strings(self) -> None:
+    def test_all_lowercase_hex_passes_through(self) -> None:
         message = "The key a1b2c3d4e5f6a7b8c9d0 was rejected"
         result = sanitize_error_message(message)
-        self.assertNotIn("a1b2c3d4e5f6a7b8c9d0", result)
-        self.assertIn("[redacted]", result)
+        self.assertEqual(result, "The key a1b2c3d4e5f6a7b8c9d0 was rejected")
 
     def test_clean_message_passes_through_unchanged(self) -> None:
         message = "Request failed with HTTP 403: Forbidden"
@@ -157,15 +156,37 @@ class SanitizeErrorMessageTest(unittest.TestCase):
         self.assertEqual(result, "Request failed with HTTP 403: Forbidden")
 
     def test_multiple_secrets_all_redacted(self) -> None:
-        message = "user_api_key=key1 and also a1b2c3d4e5f6a7b8c9d0 leaked"
+        message = "user_api_key=key1 and also AbCd1234EfGh5678IjKl9012 leaked"
         result = sanitize_error_message(message)
         self.assertNotIn("key1", result.split("[redacted]")[0] if "[redacted]" in result else "key1")
-        self.assertNotIn("a1b2c3d4e5f6a7b8c9d0", result)
+        self.assertNotIn("AbCd1234EfGh5678IjKl9012", result)
 
     def test_short_token_not_falsely_redacted(self) -> None:
         message = "HTTP 404"
         result = sanitize_error_message(message)
         self.assertEqual(result, "HTTP 404")
+
+    def test_redacts_mixed_case_token(self) -> None:
+        message = "Token AbCd1234EfGh5678IjKl9012 was rejected"
+        result = sanitize_error_message(message)
+        self.assertNotIn("AbCd1234EfGh5678IjKl9012", result)
+        self.assertIn("[redacted]", result)
+
+    def test_all_uppercase_string_passes_through(self) -> None:
+        message = "Error ERR_CONNECTION_REFUSED_TIMEOUT_SERVER"
+        result = sanitize_error_message(message)
+        self.assertEqual(result, "Error ERR_CONNECTION_REFUSED_TIMEOUT_SERVER")
+
+    def test_mixed_case_few_digits_passes_through(self) -> None:
+        message = "Failed on GettingStartedWithCyberNative2025 in prod"
+        result = sanitize_error_message(message)
+        self.assertEqual(result, "Failed on GettingStartedWithCyberNative2025 in prod")
+
+    def test_mixed_case_six_digits_redacted(self) -> None:
+        message = "Token AbCdEf123456GhIjKlMnOpQr was rejected"
+        result = sanitize_error_message(message)
+        self.assertNotIn("AbCdEf123456GhIjKlMnOpQr", result)
+        self.assertIn("[redacted]", result)
 
 
 class PublicClientMethodNamesTest(unittest.TestCase):
