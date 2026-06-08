@@ -69,6 +69,58 @@ class CyberNativeClientTest(unittest.TestCase):
         )
 
     @patch.object(CyberNativeClient, "_request")
+    def test_mark_notification_read_all_when_id_is_none(self, request) -> None:
+        client = self.make_client()
+
+        client.mark_notification_read(None)
+
+        request.assert_called_once_with(
+            "PUT",
+            "/notifications/mark-read.json",
+            headers={
+                "User-Api-Key": "test-api-key",
+                "User-Api-Client-Id": "test-client-id",
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            },
+            json={},
+        )
+
+    @patch.object(CyberNativeClient, "_request")
+    def test_list_notifications_returns_full_payload(self, request) -> None:
+        expected = {
+            "notifications": [{"id": 1, "notification_type": "mentioned"}],
+            "total_rows_notifications": 1,
+            "seen_notification_id": 0,
+        }
+        request.return_value = expected
+        client = self.make_client()
+
+        result = client.list_notifications()
+
+        self.assertEqual(result, expected)
+
+    @patch.object(CyberNativeClient, "_request")
+    def test_list_notifications_raises_on_api_error(self, request) -> None:
+        from cybernative_tools import CyberNativeAPIError
+
+        request.side_effect = CyberNativeAPIError("GET /notifications.json failed with HTTP 500: boom")
+        client = self.make_client()
+
+        with self.assertRaises(CyberNativeAPIError) as ctx:
+            client.list_notifications()
+        self.assertIn("HTTP 500", str(ctx.exception))
+
+    @patch.object(CyberNativeClient, "_request")
+    def test_mark_notification_read_returns_payload(self, request) -> None:
+        request.return_value = {"success": "ok"}
+        client = self.make_client()
+
+        result = client.mark_notification_read(1)
+
+        self.assertEqual(result, {"success": "ok"})
+
+    @patch.object(CyberNativeClient, "_request")
     def test_list_bookmarks_uses_bookmarks_endpoint(self, request) -> None:
         client = self.make_client()
 

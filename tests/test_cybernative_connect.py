@@ -6,6 +6,8 @@ from io import StringIO
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import requests as requests_lib
+
 import cybernative_connect as connect
 
 
@@ -196,6 +198,83 @@ class ProbePublicSmokeTest(unittest.TestCase):
 
         self.assertEqual(code, 1)
 
+    @patch("cybernative_connect.requests.get")
+    def test_run_probe_public_network_error(self, mock_get) -> None:
+        mock_get.side_effect = requests_lib.ConnectionError("connection refused")
+
+        code = connect.run_probe_public()
+
+        self.assertEqual(code, 1)
+
+    @patch("cybernative_connect.requests.get")
+    def test_run_probe_public_non_json_response(self, mock_get) -> None:
+        mock_get.return_value = MagicMock(
+            ok=True,
+            status_code=200,
+            json=MagicMock(side_effect=ValueError("not JSON")),
+        )
+
+        code = connect.run_probe_public()
+
+        self.assertEqual(code, 1)
+
+    @patch("cybernative_connect.requests.get")
+    def test_run_probe_public_custom_base_url(self, mock_get) -> None:
+        mock_get.return_value = MagicMock(
+            ok=True,
+            status_code=200,
+            json=MagicMock(
+                return_value={
+                    "topic_list": {
+                        "topics": [
+                            {"title": "Topic A"},
+                        ]
+                    }
+                }
+            ),
+        )
+
+        code = connect.run_probe_public(base_url="https://custom.example.com")
+
+        self.assertEqual(code, 0)
+        mock_get.assert_called_once()
+        self.assertIn("custom.example.com", mock_get.call_args.args[0])
+
+    @patch("cybernative_connect.requests.get")
+    def test_run_probe_public_shows_only_limit_topics(self, mock_get) -> None:
+        mock_get.return_value = MagicMock(
+            ok=True,
+            status_code=200,
+            json=MagicMock(
+                return_value={
+                    "topic_list": {
+                        "topics": [
+                            {"title": f"Topic {i}"} for i in range(1, 11)
+                        ]
+                    }
+                }
+            ),
+        )
+
+        code = connect.run_probe_public(limit=3)
+
+        self.assertEqual(code, 0)
+        args, _ = mock_get.call_args
+        self.assertIn("/latest.json", args[0])
+
+    @patch("cybernative_connect.requests.get")
+    def test_run_probe_public_large_limit_shows_all(self, mock_get) -> None:
+        topics = [{"title": "A"}, {"title": "B"}]
+        mock_get.return_value = MagicMock(
+            ok=True,
+            status_code=200,
+            json=MagicMock(return_value={"topic_list": {"topics": topics}}),
+        )
+
+        code = connect.run_probe_public(limit=10)
+
+        self.assertEqual(code, 0)
+
     def test_main_probe_public_help(self) -> None:
         with self.assertRaises(SystemExit) as ctx:
             connect.main(["--help"])
@@ -286,6 +365,29 @@ class VerifySmokeTest(unittest.TestCase):
         self.assertEqual(code, 0)
         mock_get.assert_called_once()
         self.assertIn("/latest.json", mock_get.call_args.args[0])
+
+    @patch.object(connect, "example_read_latest")
+    @patch.object(connect, "load_credentials_file")
+    def test_run_verify_smoke_test_request_exception(self, load_creds, read_latest) -> None:
+        load_creds.return_value = connect.CyberNativeAgentCreds(
+            base_url="https://cybernative.ai",
+            user_api_key="secret-key",
+            user_api_client_id="client-1",
+            scopes_requested="read",
+            issued_at_utc="2026-06-01T00:00:00Z",
+        )
+        read_latest.side_effect = requests_lib.ConnectionError("network unreachable")
+
+        code = connect.run_verify_smoke_test("creds.json")
+
+        self.assertEqual(code, 1)
+
+    def test_main_verify_corrupt_json_exits_nonzero(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "creds.json"
+            path.write_text("not valid json", encoding="utf-8")
+            code = connect.main(["--verify", "--out", str(path)])
+        self.assertEqual(code, 1)
 
 
 class ConnectMainTest(unittest.TestCase):
