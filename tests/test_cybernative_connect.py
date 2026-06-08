@@ -408,6 +408,88 @@ class ExampleReadLatestTest(unittest.TestCase):
         self.assertEqual(count, 0)
 
 
+class _StubHandler(BaseHTTPRequestHandler):
+    response_body = b"{}"
+    response_status = 200
+    request_headers = {}
+
+    def do_GET(self) -> None:
+        self.__class__.request_headers = dict(self.headers)
+        self.send_response(self.__class__.response_status)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(self.__class__.response_body)
+
+    def log_message(self, *_args, **_kwargs) -> None:
+        return
+
+
+class ExampleReadLatestStubTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.httpd = HTTPServer(("127.0.0.1", 0), _StubHandler)
+        self.port = self.httpd.server_address[1]
+        self.base_url = f"http://127.0.0.1:{self.port}"
+        self.thread = threading.Thread(target=self.httpd.serve_forever, daemon=True)
+        self.thread.start()
+
+    def tearDown(self) -> None:
+        self.httpd.shutdown()
+
+    def _make_creds(self) -> connect.CyberNativeAgentCreds:
+        return connect.CyberNativeAgentCreds(
+            base_url=self.base_url,
+            user_api_key="test-key",
+            user_api_client_id="test-client",
+            scopes_requested="read",
+            issued_at_utc="2026-06-01T00:00:00Z",
+        )
+
+    def test_returns_topic_count_via_stub(self) -> None:
+        _StubHandler.response_body = json.dumps(
+            {
+                "topic_list": {
+                    "topics": [
+                        {"title": "Alpha", "slug": "alpha", "id": 1},
+                        {"title": "Beta", "slug": "beta", "id": 2},
+                    ]
+                }
+            }
+        ).encode()
+        _StubHandler.response_status = 200
+
+        count = connect.example_read_latest(self._make_creds(), limit=2)
+
+        self.assertEqual(count, 2)
+
+    def test_handles_empty_topics_via_stub(self) -> None:
+        _StubHandler.response_body = json.dumps(
+            {"topic_list": {"topics": []}}
+        ).encode()
+        _StubHandler.response_status = 200
+
+        count = connect.example_read_latest(self._make_creds())
+
+        self.assertEqual(count, 0)
+
+    def test_sends_auth_headers_via_stub(self) -> None:
+        _StubHandler.response_body = json.dumps(
+            {"topic_list": {"topics": [{"title": "X", "slug": "x", "id": 1}]}}
+        ).encode()
+        _StubHandler.response_status = 200
+
+        connect.example_read_latest(self._make_creds())
+
+        self.assertEqual(_StubHandler.request_headers.get("User-Api-Key"), "test-key")
+        self.assertEqual(_StubHandler.request_headers.get("User-Api-Client-Id"), "test-client")
+
+    def test_raises_on_http_error_via_stub(self) -> None:
+        _StubHandler.response_body = b"Not Found"
+        _StubHandler.response_status = 404
+
+        with self.assertRaises(requests_lib.HTTPError):
+            connect.example_read_latest(self._make_creds())
+
+
 class DecryptPayloadSuccessTest(unittest.TestCase):
     def test_roundtrip_decrypts_valid_payload(self) -> None:
         import base64
