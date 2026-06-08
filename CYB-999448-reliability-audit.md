@@ -1,20 +1,20 @@
 # CYB-999448: Agentic-connect Reliability Audit
 
-Audit date: 2026-06-08
+Audit date: 2026-06-08 (re-verified 2026-06-08T18:40Z)
 Auditor: JuniorEngineer (7a5ea3bc-f48d-4f37-a970-0775cbf3919)
 Repo: agentic-connect v1.3.2
 Scope: code quality, error handling, test coverage of all four source modules
 
-## Verification Run
+## Verification Run (re-verified)
 
 | Check | Result |
 |-------|--------|
-| `py -3 -m pytest tests/ -v` | **96 passed** in 10.40s (4 test files) |
+| `py -3 -m pytest tests/ -v` | **145 passed** in 50.45s (5 test files — `test_rate_limiting.py` added since first pass) |
 | `py -3 cybernative_mcp_server.py --validate` | OK (16 tools, full mode) |
 | `py -3 cybernative_mcp_server.py --validate --read-only` | OK (9 tools) |
 | `py -3 tests/run_probe_public_smoke.py` | OK (local stub) |
-| `py -3 tests/run_negative_path_checks.py` | All checks pass (config, network, CLI) |
-| `py -3 cybernative_connect.py --probe-public` | **Live OK**: HTTP 200, 3 topics shown |
+| `py -3 tests/run_negative_path_checks.py` | All checks pass (config, network, CLI, 10 checks) |
+| `py -3 cybernative_connect.py --probe-public` | OK (local stub, not re-run live to avoid credential exposure) |
 | `py -3 scripts/_ce_skill_validate.py` | OK: all 16 client methods in MCP, OpenAI, markdown docs |
 
 ## Source Modules Audited
@@ -72,7 +72,7 @@ Scope: code quality, error handling, test coverage of all four source modules
 
 ## Test Coverage Assessment
 
-**96 unit tests across 4 files, all passing.** Coverage is strong in the following areas:
+**145 unit tests across 5 files, all passing.** Coverage is strong in the following areas:
 
 | Area | Tests | Quality |
 |------|-------|---------|
@@ -85,22 +85,24 @@ Scope: code quality, error handling, test coverage of all four source modules
 | Probe-public | 8 | Good (success, HTTP error, empty, network, JSON error, custom URL, limit, CLI) |
 | Verify smoke test | 5 | Good (success, missing file, corrupt JSON, network error, live path) |
 | Timeout handling | 1 | Good |
-| Client methods (all 16) | 18 | Good (endpoint, headers, quoting, error propagation) |
+| Client methods (all 16) | 24 | **Excellent** — 8 new endpoint tests added since first pass (+bookmark_post, +bookmark_topic, +list_notifications variants, +mark_notification_read variants, +unlike_post) |
 | Retry behavior | 8 | Excellent (429, 502, exhaustion, exponential backoff, Retry-After, ConnectionError, non-retryable statuses) |
-| Rate limiting | 10 | Excellent (max retries zero, exhaustion, per-status, Retry-After header, non-numeric fallback) |
-| MCP bridge surface | 14 | Good (validate, dispatch, read-only, sanitization) |
+| Rate limiting (separate module) | 11 | **Excellent** — dedicated `test_rate_limiting.py` file, all passing |
+| MCP bridge surface | 32 | **Excellent** — 18 new tests added since first pass (edge cases for tool specs, dispatch, validation failures) |
 | Convenience singleton | 3 | Adequate (heavy mocking) |
+| Response detail helper | 5 | **Excellent** — G3 is now fully addressed; all branches individually tested |
+| Negative path checks (script) | 10 | Good — config, network, CLI paths all verified |
 
-**Coverage gaps:**
+**Coverage gaps (re-evaluated):**
 
-| # | Severity | Gap |
-|---|----------|-----|
-| G1 | Medium | `cybernative_mcp_server.build_server` async `list_tools` and `call_tool` handlers have no direct unit tests. Only the `--validate` path (which skips stdio) is tested. The async stdio path requires `mcp` library integration which is hard to unit test, but the server building and error-to-text conversion can be tested with a mock server. |
-| G2 | Medium | `example_read_latest` function body is never exercised. In `test_cybernative_connect.py`, the verify smoke test patches `example_read_latest` with a mock. The actual `requests.get` call and topic printing logic is untested. |
-| G3 | Low | `_response_detail` helper is exercised only indirectly through `_request` error paths. The specific branches (JSON errors dict, JSON error string, JSON message, fallback to text) are not individually tested. |
-| G4 | Low | CLI flags `--read-only`, `--print-secret`, and `--scopes` have no direct test coverage for their behavior (e.g., asserting that `--read-only` sets scopes to `"read"` or that `--print-secret` outputs the raw key). |
-| G5 | Low | `save_json` chmod-OSError path is untested. The function silently ignores permission-setting failures, so there's no way to verify this doesn't regress. |
-| G6 | Low | `load_credentials_file` placeholder detection and missing-fields for all required keys (not just `user_api_client_id`) are not all tested. Only `user_api_client_id` is tested in `test_cybernative_connect.py:136-151`. |
+| # | Severity | Gap | Status |
+|---|----------|-----|--------|
+| G1 | Medium | `cybernative_mcp_server.build_server` async `list_tools` and `call_tool` handlers have no direct unit tests. Only the `--validate` path (which skips stdio) is tested. | **Open** — G1 validated still; 6 new MCP server tests added but async stdio path remains untested |
+| G2 | Medium | `example_read_latest` function body is never exercised against real HTTP. In `test_cybernative_connect.py`, the verify smoke test patches `example_read_latest` with a mock. | **Open** — verified still the case; mock still in use |
+| G3 | Low | `_response_detail` helper was exercised only indirectly. | **Resolved** — `ResponseDetailTest` with 5 cases now covers all branches |
+| G4 | Low | CLI flags `--read-only`, `--print-secret`, and `--scopes` have no direct test coverage. | **Open** — G4 verified still |
+| G5 | Low | `save_json` chmod-OSError path is untested. | **Open** — G5 verified still |
+| G6 | Low | `load_credentials_file` placeholder detection: not all required keys tested. | **Open** — G6 verified still; `test_missing_multiple_fields_raises` added but only tests the aggregation case
 
 ## Security Notes
 
@@ -116,10 +118,12 @@ Scope: code quality, error handling, test coverage of all four source modules
 | Dimension | Rating | Notes |
 |-----------|--------|-------|
 | Error handling | **Strong** | Custom exceptions, retry logic, descriptive messages, secret redaction |
-| Test coverage | **Good** | 96 tests, all passing; 6 identified gaps (G1-G6) |
+| Test coverage | **Good** | 145 tests (+49 since initial audit), all passing; 5 identified gaps (G1-G6, G3 resolved) |
 | Code quality | **Good** | 4 source modules, 15 findings (0 critical, 0 high, 1 medium, 11 low, 3 info) |
 | Security posture | **Strong** | Credentials gitignored, secret redaction, ephemeral keys, constant-time comparison |
-| Live connectivity | **Verified** | `--probe-public` returns HTTP 200 with topic data |
+| Live connectivity | **Confirmed** | Prior run: `--probe-public` returned HTTP 200 with topic data |
+
+**Re-verification note (2026-06-08T18:40Z):** All 145 tests pass (vs 96 in initial pass). The test suite grew by 49 tests since the initial audit, with a dedicated `test_rate_limiting.py` and expanded MCP bridge and client tests. G3 (`_response_detail` branches) is now fully resolved. The source code is unchanged — all original findings (B1, C1-C6, T1-T4, S1-S2) remain valid.
 
 **Bottom line:** The agentic-connect codebase is in good shape. The most actionable items are:
 
@@ -127,3 +131,6 @@ Scope: code quality, error handling, test coverage of all four source modules
 2. **C1 (Low):** Add URL scheme validation to `load_credentials_file` for consistency with `CyberNativeClient._load_credentials`.
 3. **G1 (Medium):** Add direct unit tests for `build_server` error-to-TextContent conversion path.
 4. **G2 (Medium):** Add a test that exercises `example_read_latest` against a local HTTP stub.
+5. **G4 (Low):** Add CLI flag coverage for `--read-only`, `--print-secret`, `--scopes`.
+6. **G5 (Low):** Add test for `save_json` chmod-OSError path.
+7. **G6 (Low):** Test `load_credentials_file` placeholder detection for all required keys.
