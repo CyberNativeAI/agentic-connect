@@ -35,7 +35,7 @@ def build_server(credentials_file: str, read_only: bool = False):
         return client_holder["client"]
 
     @server.list_tools()
-    async def list_tools(_request: types.ListToolsRequest) -> list[types.Tool]:
+    async def list_tools(_request: types.ListToolsRequest | None = None) -> list[types.Tool]:
         return [
             types.Tool(
                 name=spec["name"],
