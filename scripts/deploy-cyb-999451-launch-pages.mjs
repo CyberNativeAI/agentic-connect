@@ -14,9 +14,10 @@
 //   - Node.js >= 18
 
 import { execSync } from 'node:child_process';
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { tmpdir } from 'node:os';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, '..');
@@ -43,25 +44,34 @@ function getSecret(key) {
   }
 }
 
+function getSshKeyFile() {
+  const cred = getSecret('prod_ssh_root');
+  const keyFile = join(tmpdir(), 'ssh-key-cyb999451');
+  writeFileSync(keyFile, cred + '\n', { encoding: 'utf8', mode: 0o600 });
+  return keyFile;
+}
+
 function sshExec(command) {
-  const batFile = join(process.env.TEMP, 'ssh-askpass-cyb999451.bat');
-  const sshPass = getSecret('prod_ssh_root');
-  writeFileSync(batFile, `@echo ${sshPass}`);
-
-  const env = {
-    ...process.env,
-    SSH_ASKPASS: batFile,
-    DISPLAY: 'dummy',
-    SSH_ASKPASS_REQUIRE: 'force',
-  };
-
+  const keyFile = getSshKeyFile();
   try {
     return execSync(
-      `ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 root@64.176.199.24 "${command.replace(/"/g, '\\"')}"`,
-      { env, encoding: 'utf8', timeout: 30_000 }
+      `ssh -i "${keyFile}" -o StrictHostKeyChecking=no -o ConnectTimeout=10 root@64.176.199.24 "${command.replace(/"/g, '\\"')}"`,
+      { encoding: 'utf8', timeout: 30_000 }
     );
   } finally {
-    try { require('fs').unlinkSync(batFile); } catch {}
+    try { unlinkSync(keyFile); } catch {}
+  }
+}
+
+function scpExec(localFile, remotePath) {
+  const keyFile = getSshKeyFile();
+  try {
+    return execSync(
+      `scp -i "${keyFile}" -o StrictHostKeyChecking=no "${localFile}" root@64.176.199.24:"${remotePath}"`,
+      { encoding: 'utf8', timeout: 30_000 }
+    );
+  } finally {
+    try { unlinkSync(keyFile); } catch {}
   }
 }
 
@@ -200,17 +210,8 @@ async function deployViaSSH() {
   writeFileSync(tmpFile, updated, 'utf8');
 
   console.log('\nUploading plugin.rb to production server...');
-  const scpPass = getSecret('prod_ssh_root');
-  const batFile = join(process.env.TEMP, 'ssh-askpass-cyb999451.bat');
-  writeFileSync(batFile, `@echo ${scpPass}`);
 
-  execSync(
-    `scp -o StrictHostKeyChecking=no "${tmpFile}" root@64.176.199.24:/var/discourse/shared/standalone/tmp/cybernative-seo-src/cybernative-seo/plugin.rb`,
-    {
-      env: { ...process.env, SSH_ASKPASS: batFile, DISPLAY: 'dummy', SSH_ASKPASS_REQUIRE: 'force' },
-      encoding: 'utf8', timeout: 30_000,
-    }
-  );
+  scpExec(tmpFile, '/var/discourse/shared/standalone/tmp/cybernative-seo-src/cybernative-seo/plugin.rb');
 
   console.log('Copying plugin into Discourse container...');
   sshExec(
