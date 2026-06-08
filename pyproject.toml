@@ -13,13 +13,12 @@ authors = [
     { name = "CyberNative AI LLC" },
 ]
 dependencies = [
-    "mcp>=1.27.2",
     "pycryptodomex",
     "requests",
 ]
 
 [project.optional-dependencies]
-mcp = []
+mcp = ["mcp>=1.27.2"]
 
 [project.scripts]
 cybernative-connect = "cybernative_connect:main"

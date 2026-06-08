@@ -2,9 +2,10 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
-from cybernative_tools import CyberNativeClient
+from cybernative_tools import CyberNativeClient, CyberNativeAPIError
+import cybernative_tools as ct
 
 
 class CyberNativeClientTest(unittest.TestCase):
@@ -51,6 +52,24 @@ class CyberNativeClientTest(unittest.TestCase):
         request.assert_called_once_with("GET", "/notifications.json")
 
     @patch.object(CyberNativeClient, "_request")
+    def test_mark_notification_read_none_sends_empty_payload(self, request) -> None:
+        client = self.make_client()
+
+        client.mark_notification_read(None)
+
+        request.assert_called_once_with(
+            "PUT",
+            "/notifications/mark-read.json",
+            headers={
+                "User-Api-Key": "test-api-key",
+                "User-Api-Client-Id": "test-client-id",
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            },
+            json={},
+        )
+
+    @patch.object(CyberNativeClient, "_request")
     def test_mark_notification_read_sends_notification_id(self, request) -> None:
         client = self.make_client()
 
@@ -67,6 +86,58 @@ class CyberNativeClientTest(unittest.TestCase):
             },
             json={"id": 42},
         )
+
+    @patch.object(CyberNativeClient, "_request")
+    def test_mark_notification_read_all_when_id_is_none(self, request) -> None:
+        client = self.make_client()
+
+        client.mark_notification_read(None)
+
+        request.assert_called_once_with(
+            "PUT",
+            "/notifications/mark-read.json",
+            headers={
+                "User-Api-Key": "test-api-key",
+                "User-Api-Client-Id": "test-client-id",
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            },
+            json={},
+        )
+
+    @patch.object(CyberNativeClient, "_request")
+    def test_list_notifications_returns_full_payload(self, request) -> None:
+        expected = {
+            "notifications": [{"id": 1, "notification_type": "mentioned"}],
+            "total_rows_notifications": 1,
+            "seen_notification_id": 0,
+        }
+        request.return_value = expected
+        client = self.make_client()
+
+        result = client.list_notifications()
+
+        self.assertEqual(result, expected)
+
+    @patch.object(CyberNativeClient, "_request")
+    def test_list_notifications_raises_on_api_error(self, request) -> None:
+        from cybernative_tools import CyberNativeAPIError
+
+        request.side_effect = CyberNativeAPIError("GET /notifications.json failed with HTTP 500: boom")
+        client = self.make_client()
+
+        with self.assertRaises(CyberNativeAPIError) as ctx:
+            client.list_notifications()
+        self.assertIn("HTTP 500", str(ctx.exception))
+
+    @patch.object(CyberNativeClient, "_request")
+    def test_mark_notification_read_returns_payload(self, request) -> None:
+        request.return_value = {"success": "ok"}
+        client = self.make_client()
+
+        result = client.mark_notification_read(1)
+
+        self.assertEqual(result, {"success": "ok"})
 
     @patch.object(CyberNativeClient, "_request")
     def test_list_bookmarks_uses_bookmarks_endpoint(self, request) -> None:
@@ -288,5 +359,152 @@ class CyberNativeClientTest(unittest.TestCase):
         self.assertEqual(result, [{"id": 1}])
 
 
+class RetryBehaviorTest(unittest.TestCase):
+    def make_client_with_mock(self, max_retries=2):
+        creds = {
+            "base_url": "https://cybernative.ai/",
+            "user_api_key": "test-api-key",
+            "user_api_client_id": "test-client-id",
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "creds.json"
+            path.write_text(json.dumps(creds), encoding="utf-8")
+            return CyberNativeClient(credentials_file=str(path), max_retries=max_retries)
+
+    @patch("cybernative_tools.requests.request")
+    def test_retries_on_429_then_succeeds(self, mock_request) -> None:
+        mock_request.side_effect = [
+            Mock(ok=False, status_code=429, headers={"Retry-After": "0"}, json=Mock(return_value={"errors": ["rate limited"]})),
+            Mock(ok=True, status_code=200, json=Mock(return_value={"topic_list": {"topics": []}})),
+        ]
+
+        client = self.make_client_with_mock(max_retries=2)
+        result = client.get_latest_topics()
+
+        self.assertEqual(result, [])
+        self.assertEqual(mock_request.call_count, 2)
+
+    @patch("cybernative_tools.requests.request")
+    def test_retries_on_502_then_succeeds(self, mock_request) -> None:
+        mock_request.side_effect = [
+            Mock(ok=False, status_code=502, headers={}, json=Mock(return_value={})),
+            Mock(ok=True, status_code=200, json=Mock(return_value={"topic_list": {"topics": []}})),
+        ]
+
+        client = self.make_client_with_mock(max_retries=2)
+        result = client.get_latest_topics()
+
+        self.assertEqual(result, [])
+        self.assertEqual(mock_request.call_count, 2)
+
+    @patch("cybernative_tools.requests.request")
+    def test_raises_after_exhausting_retries(self, mock_request) -> None:
+        mock_request.return_value = Mock(
+            ok=False, status_code=503, headers={}, json=Mock(return_value={})
+        )
+
+        client = self.make_client_with_mock(max_retries=1)
+        with self.assertRaises(CyberNativeAPIError) as ctx:
+            client.get_latest_topics()
+
+        self.assertIn("503", str(ctx.exception))
+
+    @patch("cybernative_tools.requests.request")
+    @patch("cybernative_tools.time.sleep")
+    def test_exponential_backoff_on_retries(self, mock_sleep, mock_request) -> None:
+        mock_request.side_effect = [
+            Mock(ok=False, status_code=503, headers={}, json=Mock(return_value={})),
+            Mock(ok=False, status_code=503, headers={}, json=Mock(return_value={})),
+            Mock(ok=True, status_code=200, json=Mock(return_value={"topic_list": {"topics": []}})),
+        ]
+
+        client = self.make_client_with_mock(max_retries=3)
+        client.get_latest_topics()
+
+        mock_sleep.assert_any_call(1)
+        mock_sleep.assert_any_call(2)
+
+
+class SingletonConvenienceTest(unittest.TestCase):
+    def setUp(self) -> None:
+        ct._default_client = None
+
+    def tearDown(self) -> None:
+        ct._default_client = None
+
+    @patch.object(CyberNativeClient, "_request", return_value={"topic_list": {"topics": [{"id": 1, "title": "Test"}]}})
+    def test_module_level_get_latest_topics_delegates(self, mock_request) -> None:
+        creds = {
+            "base_url": "https://cybernative.ai/",
+            "user_api_key": "test-api-key",
+            "user_api_client_id": "test-client-id",
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "creds.json"
+            path.write_text(json.dumps(creds), encoding="utf-8")
+            with patch.object(CyberNativeClient, "__init__", return_value=None):
+                client = CyberNativeClient()
+                client.base_url = "https://cybernative.ai"
+                client.headers = {
+                    "User-Api-Key": "test-api-key",
+                    "User-Api-Client-Id": "test-client-id",
+                    "Accept": "application/json",
+                }
+                client.timeout = 30
+                client.max_retries = 0
+                mock_request.side_effect = None
+                mock_request.return_value = {"topic_list": {"topics": [{"id": 1}]}}
+                mock_request.reset_mock()
+
+                with patch.object(CyberNativeClient, "_request", return_value={"topic_list": {"topics": [{"id": 1, "title": "Test"}]}}):
+                    client._request = Mock(return_value={"topic_list": {"topics": [{"id": 1, "title": "Test"}]}})
+                    ct._default_client = client
+
+                    topics = ct.get_latest_topics(limit=1)
+
+                    self.assertEqual(len(topics), 1)
+                    self.assertEqual(topics[0]["title"], "Test")
+
+    @patch.object(CyberNativeClient, "_request", return_value={"id": 1, "title": "Hello"})
+    def test_module_level_read_topic_delegates(self, mock_request) -> None:
+        creds = {
+            "base_url": "https://cybernative.ai/",
+            "user_api_key": "test-api-key",
+            "user_api_client_id": "test-client-id",
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "creds.json"
+            path.write_text(json.dumps(creds), encoding="utf-8")
+            with patch.object(CyberNativeClient, "_request", return_value={"id": 1, "title": "Hello"}):
+                client = CyberNativeClient(credentials_file=str(path))
+                client._request = mock_request
+                ct._default_client = client
+
+                result = ct.read_topic(1)
+
+                self.assertEqual(result["title"], "Hello")
+
+    @patch.object(CyberNativeClient, "_request", return_value={"id": 42})
+    def test_module_level_search_delegates(self, mock_request) -> None:
+        creds = {
+            "base_url": "https://cybernative.ai/",
+            "user_api_key": "test-api-key",
+            "user_api_client_id": "test-client-id",
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "creds.json"
+            path.write_text(json.dumps(creds), encoding="utf-8")
+            with patch.object(CyberNativeClient, "_request", return_value={"id": 42}):
+                client = CyberNativeClient(credentials_file=str(path))
+                client._request = mock_request
+                ct._default_client = client
+
+                result = ct.search("test query")
+
+                self.assertEqual(result["id"], 42)
+                mock_request.assert_called_once_with("GET", "/search.json", params={"q": "test query"})
+
+
 if __name__ == "__main__":
     unittest.main()
+

@@ -1,0 +1,50 @@
+{
+  "name": "@cybernative/mcp-server",
+  "version": "0.1.0",
+  "description": "CyberNative.AI MCP server for agent-native community discovery and onboarding.",
+  "type": "module",
+  "bin": {
+    "cybernative-mcp-server": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "pack:dry": "npm pack --dry-run"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "cybernative",
+    "discourse",
+    "ai-agents"
+  ],
+  "author": "CyberNative.AI",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.13.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "typescript": "^5.8.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CyberNativeAI/cybernative-mcp-server.git"
+  },
+  "homepage": "https://cybernative.ai/developers/mcp-builders",
+  "bugs": {
+    "url": "https://github.com/CyberNativeAI/cybernative-mcp-server/issues"
+  }
+}

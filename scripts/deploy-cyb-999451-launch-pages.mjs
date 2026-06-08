@@ -1,17 +1,20 @@
 #!/usr/bin/env node
-// Deploy CYB-999451 launch pages to cybernative.ai production.
+// Deploy CYB-6 revenue landing pages to production via cybernative-seo plugin.
 //
-// Two deploy modes:
-//   1. SSH   - node deploy-cyb-999451-launch-pages.mjs --ssh
-//   2. API   - node deploy-cyb-999451-launch-pages.mjs --api (default)
+// Steps:
+//   1. Read each launch page HTML + CSS + JS
+//   2. Inline CSS/JS and base64-encode hero images into each HTML file
+//   3. Generate updated plugin.rb with routes for all launch pages
+//   4. Upload to production server via SCP
+//   5. Copy into Discourse container and restart Rails
 //
 // Prerequisites:
-//   - prod_ssh_root vault secret (SSH mode)
-//   - prod_discourse_admin_api_key vault secret (API mode)
+//   - prod_ssh_root vault secret
+//   - prod_discourse_admin_api_key vault secret (for API fallback)
 //   - Node.js >= 18
 
 import { execSync } from 'node:child_process';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -20,64 +23,214 @@ const repoRoot = join(__dirname, '..');
 const launchDir = join(repoRoot, 'launch');
 const pagesDir = join(launchDir, 'pages');
 
-const PAGES = [
-  { file: 'index.html',       route: '/launch',              title: 'Launch offers hub' },
-  { file: 'concierge.html',   route: '/launch/concierge',     title: 'Agent Launch Concierge' },
-  { file: 'sponsor.html',     route: '/launch/sponsor',       title: 'Sponsored Builder Launch' },
-  { file: 'thanks.html',      route: '/launch/thanks',        title: 'Thank you' },
-  { file: 'connect-ai-agent-to-discourse.html', route: '/connect-ai-agent-to-discourse', title: 'Connect AI Agent to Discourse' },
-];
+function readText(relPath) {
+  return readFileSync(join(repoRoot, relPath), 'utf8');
+}
 
-function getSecret(name) {
-  const getSecretPath = join(repoRoot, 'secrets-manager', 'get-secret.mjs');
+function readBinary(relPath) {
+  return readFileSync(join(repoRoot, relPath));
+}
+
+function getSecret(key) {
+  const p = join(repoRoot, 'secrets-manager');
   try {
-    return execSync(`node "${getSecretPath}" ${name}`, {
-      cwd: join(repoRoot, 'secrets-manager'),
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-      timeout: 10_000,
+    return execSync(`node get-secret.mjs ${key}`, {
+      cwd: p, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'], timeout: 10_000,
     }).trim();
   } catch (err) {
-    console.error(`Failed to retrieve secret "${name}": ${err.stderr || err.message}`);
+    console.error(`Failed to retrieve secret "${key}"`);
     process.exit(1);
   }
 }
 
-function readTextFile(path) {
-  if (!existsSync(path)) {
-    console.error(`File not found: ${path}`);
-    process.exit(1);
+function sshExec(command) {
+  const batFile = join(process.env.TEMP, 'ssh-askpass-cyb999451.bat');
+  const sshPass = getSecret('prod_ssh_root');
+  writeFileSync(batFile, `@echo ${sshPass}`);
+
+  const env = {
+    ...process.env,
+    SSH_ASKPASS: batFile,
+    DISPLAY: 'dummy',
+    SSH_ASKPASS_REQUIRE: 'force',
+  };
+
+  try {
+    return execSync(
+      `ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 root@64.176.199.24 "${command.replace(/"/g, '\\"')}"`,
+      { env, encoding: 'utf8', timeout: 30_000 }
+    );
+  } finally {
+    try { require('fs').unlinkSync(batFile); } catch {}
   }
-  return readFileSync(path, 'utf8');
 }
 
-function inlinePage(htmlPath) {
-  const html = readTextFile(htmlPath);
+const IMAGE_MAP = {
+  './assets/cybernative-concierge-hero.png': 'launch/assets/cybernative-concierge-hero.png',
+  './assets/cybernative-sponsor-hero.png': 'launch/assets/cybernative-sponsor-hero.png',
+  './assets/cybernative-agent-launch-hero.png': 'launch/assets/cybernative-agent-launch-hero.png',
+};
 
-  const pageDir = launchDir;
-  const landingCss = readTextFile(join(pageDir, 'landing.css'));
-  const tokensCss = readTextFile(join(pageDir, 'design-tokens.css'));
-  const fullCss = `${tokensCss}\n${landingCss}`;
+function base64Image(relPath) {
+  const buf = readBinary(relPath);
+  const ext = relPath.split('.').pop();
+  const mime = ext === 'png' ? 'image/png' : 'image/jpeg';
+  return `data:${mime};base64,${buf.toString('base64')}`;
+}
 
-  const cssRef = /<link rel="stylesheet" href="[^"]*landing\.css[^"]*">/;
-  const seoJs = readTextFile(join(pageDir, 'seo.js'));
-  const launchJs = readTextFile(join(pageDir, 'launch.js'));
+function inlineAssets(html) {
+  const designTokensCss = readText('launch/design-tokens.css')
+    .replace(/@import url\(.*fonts\.googleapis\.com.*\);/, '');
+  const landingCss = readText('launch/landing.css')
+    .replace(/@import url\("\.\/design-tokens\.css"\);/, '');
+  const combinedCss = designTokensCss + '\n' + landingCss;
 
-  let result = html.replace(cssRef, `<style>\n${fullCss}\n</style>`);
-  result = result.replace(
-    /<script src="[^"]*seo\.js[^"]*"><\/script>/,
+  html = html.replace(
+    '<link rel="stylesheet" href="../landing.css">',
+    `<style>\n${combinedCss}\n</style>`
+  );
+  html = html.replace(
+    '<link rel="stylesheet" href="./landing.css">',
+    `<style>\n${combinedCss}\n</style>`
+  );
+
+  const launchJs = readText('launch/launch.js');
+  const seoJs = readText('launch/seo.js');
+
+  html = html.replace(
+    '<script src="../seo.js"></script>',
     `<script>\n${seoJs}\n</script>`
   );
-  result = result.replace(
-    /<script src="[^"]*launch\.js[^"]*"><\/script>/,
+  html = html.replace(
+    '<script src="./seo.js"></script>',
+    `<script>\n${seoJs}\n</script>`
+  );
+  html = html.replace(
+    '<script src="../launch.js"></script>',
+    `<script>\n${launchJs}\n</script>`
+  );
+  html = html.replace(
+    '<script src="./launch.js"></script>',
     `<script>\n${launchJs}\n</script>`
   );
 
-  return result;
+  for (const [ref, filePath] of Object.entries(IMAGE_MAP)) {
+    if (html.includes(ref)) {
+      try {
+        const b64 = base64Image(filePath);
+        html = html.replaceAll(ref, b64);
+      } catch (e) {
+        console.warn(`  Image not found: ${filePath}, keeping placeholder`);
+      }
+    }
+  }
+
+  return html;
+}
+
+const PAGES = {
+  '/launch': join(pagesDir, 'index.html'),
+  '/launch/concierge': join(pagesDir, 'concierge.html'),
+  '/launch/sponsor': join(pagesDir, 'sponsor.html'),
+  '/launch/thanks': join(pagesDir, 'thanks.html'),
+};
+
+async function deployViaSSH() {
+  console.log('Building staged HTML for all launch pages...');
+  const stagedPages = {};
+  for (const [route, filePath] of Object.entries(PAGES)) {
+    if (!existsSync(filePath)) {
+      console.warn(`  SKIPPING ${route}: file not found at ${filePath}`);
+      continue;
+    }
+    const html = inlineAssets(readFileSync(filePath, 'utf8'));
+    stagedPages[route] = html;
+    console.log(`  ${route}: ${html.length} bytes`);
+  }
+
+  console.log('\nFetching current plugin.rb from production...');
+  const currentPluginRb = sshExec(
+    'cat /var/discourse/shared/standalone/tmp/cybernative-seo-src/cybernative-seo/plugin.rb'
+  );
+
+  let updated = currentPluginRb;
+
+  const routeLines = Object.entries(stagedPages).map(([route, html], i) => {
+    const methodName = `staged_launch_${i}`;
+    return `  get "${route}" => "cybernative_seo/pages#${methodName}"`;
+  }).join('\n');
+
+  const routeBlock = `\n  # CYB-6 revenue landing pages (CYB-999451)\n${routeLines}\n`;
+  if (updated.includes('get "/connect-ai-agent-to-discourse"')) {
+    updated = updated.replace(
+      'get "/connect-ai-agent-to-discourse"',
+      `${routeBlock}  get "/connect-ai-agent-to-discourse"`
+    );
+  } else {
+    updated = updated.replace(
+      'get "/" => "cybernative_seo/pages#index"',
+      `get "/" => "cybernative_seo/pages#index"\n${routeLines}`
+    );
+  }
+
+  let methodsBlock = '';
+  Object.entries(stagedPages).forEach(([route, html], i) => {
+    const methodName = `staged_launch_${i}`;
+    const escapedHtml = html
+      .replace(/\\/g, '\\\\')
+      .replace(/"/g, '\\"')
+      .replace(/\n/g, '\\n')
+      .replace(/\r/g, '');
+    methodsBlock += `
+  def ${methodName}
+    staged_html = "${escapedHtml}"
+    render html: staged_html.html_safe, layout: false, content_type: "text/html"
+  end
+`;
+  });
+
+  updated = updated.replace(
+    '    def html_sitemap',
+    `${methodsBlock}\n    def html_sitemap`
+  );
+
+  console.log(`Updated plugin.rb: ${updated.length} bytes`);
+
+  const tmpFile = join(process.env.TEMP, 'plugin-rb-cyb-999451.rb');
+  writeFileSync(tmpFile, updated, 'utf8');
+
+  console.log('\nUploading plugin.rb to production server...');
+  const scpPass = getSecret('prod_ssh_root');
+  const batFile = join(process.env.TEMP, 'ssh-askpass-cyb999451.bat');
+  writeFileSync(batFile, `@echo ${scpPass}`);
+
+  execSync(
+    `scp -o StrictHostKeyChecking=no "${tmpFile}" root@64.176.199.24:/var/discourse/shared/standalone/tmp/cybernative-seo-src/cybernative-seo/plugin.rb`,
+    {
+      env: { ...process.env, SSH_ASKPASS: batFile, DISPLAY: 'dummy', SSH_ASKPASS_REQUIRE: 'force' },
+      encoding: 'utf8', timeout: 30_000,
+    }
+  );
+
+  console.log('Copying plugin into Discourse container...');
+  sshExec(
+    'docker cp /var/discourse/shared/standalone/tmp/cybernative-seo-src/cybernative-seo/plugin.rb app:/var/www/discourse/plugins/cybernative-seo/plugin.rb'
+  );
+
+  console.log('Restarting Discourse Rails app...');
+  const result = sshExec(
+    "docker exec app /bin/bash -c 'cd /var/www/discourse && touch tmp/restart.txt && echo restarted'"
+  );
+  console.log(`Restart result: ${result.trim()}`);
+
+  console.log('\n=== DEPLOY COMPLETE ===');
+  Object.keys(stagedPages).forEach(route => {
+    console.log(`  https://cybernative.ai${route}`);
+  });
 }
 
 async function deployViaAPI() {
-  console.log('Deploying via Discourse Admin API...');
+  console.log('Deploying via Discourse Admin API (fallback)...');
 
   const apiKey = getSecret('prod_discourse_admin_api_key');
   const baseUrl = 'https://cybernative.ai';
@@ -88,120 +241,44 @@ async function deployViaAPI() {
     'Accept': 'application/json',
   };
 
-  for (const page of PAGES) {
-    const pagePath = join(pagesDir, page.file);
-    const body = inlinePage(pagePath);
+  for (const [route, filePath] of Object.entries(PAGES)) {
+    if (!existsSync(filePath)) continue;
+    const body = inlineAssets(readFileSync(filePath, 'utf8'));
 
-    console.log(`Uploading ${page.file} -> ${page.route}`);
-
-    const formData = new FormData();
-    formData.append('theme[name]', 'Launch Pages (CYB-999451)');
-    formData.append('theme[component]', 'true');
+    console.log(`Uploading ${route}`);
 
     try {
       const createResp = await fetch(`${baseUrl}/admin/themes.json`, {
         method: 'POST',
         headers: authHeaders,
-        body: JSON.stringify({
-          theme: {
-            name: `Launch: ${page.title}`,
-            component: true,
-          },
-        }),
+        body: JSON.stringify({ theme: { name: `Launch: ${route}`, component: true } }),
       });
 
       if (!createResp.ok) {
-        const err = await createResp.text();
-        console.error(`  Failed to create theme for ${page.file}: HTTP ${createResp.status} ${err}`);
+        console.error(`  Failed: HTTP ${createResp.status}`);
         continue;
       }
 
       const theme = await createResp.json();
-      const themeId = theme.theme.id;
-
-      await fetch(`${baseUrl}/admin/themes/${themeId}/setting`, {
-        method: 'PUT',
-        headers: authHeaders,
-        body: JSON.stringify({
-          name: 'enabled',
-          value: 'true',
-        }),
-      });
-
-      console.log(`  Theme ${themeId} created: "${page.title}"`);
+      console.log(`  Theme ${theme.theme.id} created`);
     } catch (err) {
-      console.error(`  Error uploading ${page.file}: ${err.message}`);
+      console.error(`  Error: ${err.message}`);
     }
   }
-
-  console.log('API deploy complete.');
-}
-
-async function deployViaSSH() {
-  console.log('Deploying via SSH to 64.176.199.24...');
-
-  const sshPass = getSecret('prod_ssh_root');
-  const host = '64.176.199.24';
-  const user = 'root';
-
-  const tmpDir = '/tmp/cyb999451-launch/';
-  const targetDir = '/var/www/cybernative/launch/';
-
-  const filesToCopy = [
-    { src: join(launchDir, 'design-tokens.css'), dest: 'design-tokens.css' },
-    { src: join(launchDir, 'landing.css'), dest: 'landing.css' },
-    { src: join(launchDir, 'launch.js'), dest: 'launch.js' },
-    { src: join(launchDir, 'seo.js'), dest: 'seo.js' },
-  ];
-
-  for (const page of PAGES) {
-    filesToCopy.push({
-      src: join(pagesDir, page.file),
-      dest: `pages/${page.file}`,
-    });
-  }
-
-  function ssh(cmd) {
-    const sshCmd = `sshpass -p '${sshPass}' ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${user}@${host} "${cmd}"`;
-    try {
-      return execSync(sshCmd, { encoding: 'utf8', timeout: 30_000 });
-    } catch (err) {
-      console.error(`SSH command failed: ${cmd}`);
-      throw err;
-    }
-  }
-
-  console.log(`Creating target directory: ${targetDir}`);
-  ssh(`mkdir -p ${targetDir}/pages`);
-
-  for (const f of filesToCopy) {
-    const dest = `${targetDir}${f.dest}`;
-    console.log(`Copying ${f.dest}`);
-    try {
-      execSync(
-        `sshpass -p '${sshPass}' scp -o StrictHostKeyChecking=no "${f.src}" ${user}@${host}:${dest}`,
-        { timeout: 15_000 }
-      );
-    } catch (err) {
-      console.error(`  Failed to copy ${f.dest}: ${err.message}`);
-    }
-  }
-
-  console.log('SSH deploy complete.');
 }
 
 async function main() {
-  const mode = process.argv.includes('--ssh') ? 'ssh' : 'api';
-  console.log(`CYB-999451 Launch Pages Deploy — ${mode.toUpperCase()} mode`);
+  const mode = process.argv.includes('--api') ? 'api' : 'ssh';
+  console.log(`CYB-999451 Launch Pages Deploy — ${mode.toUpperCase()} mode\n`);
 
-  if (mode === 'ssh') {
-    await deployViaSSH();
-  } else {
+  if (mode === 'api') {
     await deployViaAPI();
+  } else {
+    await deployViaSSH();
   }
 }
 
 main().catch((err) => {
-  console.error(err);
+  console.error('Deploy failed:', err.message);
   process.exit(1);
 });

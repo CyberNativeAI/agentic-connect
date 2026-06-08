@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Agent Launch Concierge — Free Consultation | CyberNative</title>
+    <meta name="description" content="Get free 15-min guidance on launching your AI agent, MCP tool, or developer product. Zero commitment.">
+    <link rel="canonical" href="https://cybernative.ai/launch/consultation">
+    <link rel="stylesheet" href="./landing.css">
+    <style>
+      .radio-group {
+        display: grid;
+        gap: 10px;
+      }
+
+      .radio-option {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 14px 16px;
+        border: 1px solid var(--cn-rule-strong);
+        border-radius: var(--radius-sm);
+        background: var(--cn-ink-deep);
+        cursor: pointer;
+        transition: border-color 0.15s ease, background 0.15s ease;
+      }
+
+      .radio-option:has(input:checked) {
+        border-color: var(--cn-signal);
+        background: color-mix(in srgb, var(--cn-signal) 8%, var(--cn-ink-deep));
+      }
+
+      .radio-option:hover {
+        border-color: var(--cn-bone-soft);
+      }
+
+      .radio-option input[type="radio"] {
+        width: 18px;
+        height: 18px;
+        min-height: 18px;
+        margin-top: 1px;
+        accent-color: var(--cn-signal);
+        flex-shrink: 0;
+      }
+
+      .radio-text strong {
+        display: block;
+        font-size: 15px;
+        color: var(--cn-bone);
+      }
+
+      .radio-text p {
+        margin: 4px 0 0;
+        font-size: 13px;
+        color: var(--cn-mute);
+      }
+
+      .success-card {
+        display: none;
+        padding: clamp(26px, 5vw, 46px);
+        border: 1px solid var(--cn-signal);
+        border-radius: var(--radius-lg);
+        background: var(--cn-card);
+        text-align: center;
+      }
+
+      .success-card:target,
+      .success-card.visible {
+        display: block;
+      }
+
+      .success-card h2 {
+        font-family: var(--cn-serif);
+        font-size: clamp(28px, 4vw, 40px);
+        line-height: 1.12;
+      }
+
+      .success-card p {
+        color: var(--cn-mute);
+        max-width: 520px;
+        margin: 16px auto 0;
+      }
+
+      .success-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 12px;
+        margin-top: 24px;
+      }
+
+      #form-section.hidden {
+        display: none;
+      }
+
+      fieldset.wide {
+        grid-column: 1 / -1;
+      }
+
+      .privacy {
+        grid-column: 1 / -1;
+        margin: 0;
+        font-size: 12px;
+        color: var(--cn-mute);
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body data-offer-page="consultation">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <header class="site-header">
+      <a class="brand" href="https://cybernative.ai/" aria-label="CyberNative home">
+        <span class="brand-mark">CN</span>
+        <span>CyberNative</span>
+      </a>
+      <nav aria-label="Launch">
+        <a href="./index.html">Launch Hub</a>
+        <a href="./concierge.html">Concierge</a>
+        <a href="./sponsor.html">Sponsor</a>
+      </nav>
+    </header>
+
+    <main id="main-content" class="shell">
+      <section class="hero" style="min-height:auto;padding-bottom:0">
+        <div class="hero-copy">
+          <p class="eyebrow">Agent Launch Concierge</p>
+          <h1>Free launch consultation for AI agent builders.</h1>
+          <p class="hero-lede">Tell us what you're building. We'll connect you with a CyberNative launch specialist for a free 15-minute call — zero commitment, no credit card.</p>
+          <dl class="proof-strip">
+            <div><dt>15 min</dt><dd>zero-commitment call</dd></div>
+            <div><dt>1 reply</dt><dd>within 24 hours</dd></div>
+            <div><dt>$0</dt><dd>no payment required</dd></div>
+          </dl>
+        </div>
+      </section>
+
+      <section id="form-section" class="section intake" style="padding-top:46px">
+        <div>
+          <p class="eyebrow">Get started</p>
+          <h2>What are you launching?</h2>
+          <p>Fill in the form below and we'll reach out within 24 hours to schedule your free call — or add you to the early-access waitlist.</p>
+        </div>
+        <form id="consultation-form" action="https://formsubmit.co/legal@cybernative.ai" method="POST">
+          <input type="hidden" name="_subject" value="CyberNative Consultation Request">
+          <input type="hidden" name="_next" value="https://cybernative.ai/launch/consultation#success">
+          <input type="text" name="_honey" style="display:none">
+
+          <label>Name<input name="name" autocomplete="name" required placeholder="Your full name"></label>
+          <label>Work email<input type="email" name="email" autocomplete="email" required placeholder="you@company.com"></label>
+          <label>Company / Project<input name="company" autocomplete="organization" required placeholder="Company or project name"></label>
+
+          <label class="wide">Use case<textarea name="use_case" rows="3" required placeholder="What kind of AI agent are you building? Tell us about your product, stack, and launch goals."></textarea></label>
+
+          <fieldset class="wide" style="border:none;padding:0;margin:0;min-width:0">
+            <legend style="font-size:13px;font-weight:600;margin-bottom:8px;float:left;width:100%">What are you most interested in?</legend>
+            <div class="radio-group">
+              <label class="radio-option" for="interest-consultation">
+                <input type="radio" id="interest-consultation" name="interest" value="Free 15-min consultation call" required checked>
+                <div class="radio-text">
+                  <strong>Free 15-min consultation call</strong>
+                  <p>We'll schedule a call within 24 hours to discuss your launch.</p>
+                </div>
+              </label>
+              <label class="radio-option" for="interest-waitlist">
+                <input type="radio" id="interest-waitlist" name="interest" value="Early-access waitlist">
+                <div class="radio-text">
+                  <strong>Early-access waitlist</strong>
+                  <p>I'll wait for the full launch — notify me when slots open.</p>
+                </div>
+              </label>
+            </div>
+          </fieldset>
+
+          <label class="wide">How did you hear about us? <span style="font-weight:400;color:var(--cn-mute)">(optional)</span>
+            <input name="source" placeholder="LinkedIn, friend, search, etc.">
+          </label>
+
+          <input type="hidden" name="utm_source">
+          <input type="hidden" name="utm_medium">
+          <input type="hidden" name="utm_campaign">
+          <input type="hidden" name="utm_content">
+
+          <button class="button primary full" type="submit" id="cta-button">Get My Free Consultation</button>
+          <p class="privacy">No spam. We'll never share your info. Unsubscribe anytime.</p>
+        </form>
+      </section>
+
+      <div class="success-card" id="success">
+        <p class="eyebrow">Request received</p>
+        <h2 id="success-heading">We'll be in touch within 24 hours.</h2>
+        <p id="success-message">We'll email you to schedule your free 15-minute consultation call. In the meantime, check out the agentic-connect repo for what you can prep.</p>
+        <div class="success-actions">
+          <a class="button primary" href="https://github.com/CyberNativeAI/agentic-connect">See the connector</a>
+          <a class="button ghost" href="./index.html">Back to Launch Hub</a>
+        </div>
+      </div>
+    </main>
+
+    <footer class="shell">
+      <span>CyberNative launch hub &middot; CYB-29 Dispatch design</span>
+      <a href="https://github.com/CyberNativeAI/agentic-connect">agentic-connect</a>
+    </footer>
+
+    <script src="./launch.js"></script>
+    <script>
+      (function () {
+        var interestRadios = document.querySelectorAll('input[name="interest"]');
+        var ctaButton = document.getElementById('cta-button');
+        var successElement = document.getElementById('success');
+        var successHeading = document.getElementById('success-heading');
+        var successMessage = document.getElementById('success-message');
+        var formSection = document.getElementById('form-section');
+
+        interestRadios.forEach(function (radio) {
+          radio.addEventListener('change', function () {
+            if (this.value === 'Free 15-min consultation call') {
+              ctaButton.textContent = 'Get My Free Consultation';
+            } else {
+              ctaButton.textContent = 'Join the Waitlist';
+            }
+          });
+        });
+
+        if (window.location.hash === '#success') {
+          if (formSection) formSection.classList.add('hidden');
+          if (successElement) successElement.classList.add('visible');
+          var params = new URLSearchParams(window.location.search);
+          var name = params.get('name');
+          if (name) {
+            successHeading.textContent = 'Thanks, ' + decodeURIComponent(name) + '!';
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>
