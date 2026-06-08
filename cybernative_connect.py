@@ -237,6 +237,11 @@ def load_credentials_file(path: str) -> CyberNativeAgentCreds:
             "Run without --verify to authorize an agent."
         )
 
+    if not str(data["base_url"]).startswith(("https://", "http://")):
+        raise ValueError(
+            "Credentials field 'base_url' must start with https:// or http://."
+        )
+
     return CyberNativeAgentCreds(
         base_url=str(data["base_url"]).rstrip("/"),
         user_api_key=str(data["user_api_key"]),

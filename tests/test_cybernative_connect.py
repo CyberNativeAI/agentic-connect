@@ -1,8 +1,10 @@
 import json
 import os
 import tempfile
+import threading
 import unittest
 from contextlib import redirect_stdout
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from io import StringIO
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -225,6 +227,25 @@ class LoadCredentialsFileTest(unittest.TestCase):
             with self.assertRaises(ValueError) as ctx:
                 connect.load_credentials_file(str(path))
             self.assertIn("placeholder", str(ctx.exception))
+
+    def test_invalid_url_scheme_raises(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "creds.json"
+            for bad_url in ("ftp://evil.example", "://missing-scheme", "just-a-string"):
+                path.write_text(
+                    json.dumps(
+                        {
+                            "base_url": bad_url,
+                            "user_api_key": "secret-key",
+                            "user_api_client_id": "client-1",
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+                with self.subTest(base_url=bad_url):
+                    with self.assertRaises(ValueError) as ctx:
+                        connect.load_credentials_file(str(path))
+                    self.assertIn("base_url", str(ctx.exception))
 
     def test_optional_fields_default_to_empty(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
