@@ -54,11 +54,19 @@ class CyberNativeClient:
 
         creds = self._load_credentials(credentials_file)
         self.base_url = creds["base_url"].rstrip("/")
-        self.headers = {
-            "User-Api-Key": creds["user_api_key"],
-            "User-Api-Client-Id": creds["user_api_client_id"],
-            "Accept": "application/json",
-        }
+
+        if "api_key" in creds and creds.get("api_key"):
+            self.headers = {
+                "Api-Key": creds["api_key"],
+                "Api-Username": creds.get("api_username", "system"),
+                "Accept": "application/json",
+            }
+        else:
+            self.headers = {
+                "User-Api-Key": creds["user_api_key"],
+                "User-Api-Client-Id": creds["user_api_client_id"],
+                "Accept": "application/json",
+            }
 
     def _load_credentials(self, credentials_file: str) -> dict[str, str]:
         creds_path = Path(credentials_file)
@@ -80,11 +88,16 @@ class CyberNativeClient:
         required = ("base_url", "user_api_key", "user_api_client_id")
         missing = [key for key in required if not creds.get(key)]
         if missing:
-            raise CyberNativeConfigurationError(
-                f"Credentials file is missing required field(s): {', '.join(missing)}"
-            )
+            alt_required = ("base_url", "api_key")
+            alt_missing = [key for key in alt_required if not creds.get(key)]
+            if alt_missing:
+                raise CyberNativeConfigurationError(
+                    f"Credentials file is missing required field(s): {', '.join(missing)}"
+                )
+            missing = []
 
-        placeholders = [key for key in required if str(creds[key]).startswith("<")]
+        auth_keys = [k for k in ("user_api_key", "api_key") if creds.get(k)]
+        placeholders = [key for key in auth_keys if str(creds[key]).startswith("<")]
         if placeholders:
             raise CyberNativeConfigurationError(
                 f"Credentials file still contains placeholder field(s): {', '.join(placeholders)}. "
