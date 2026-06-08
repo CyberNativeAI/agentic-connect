@@ -1,12 +1,7 @@
 #!/usr/bin/env node
 // Deploy staged agent onboarding connect guide to production.
-// CYB-999210 — updates cybernative-seo Discourse plugin to serve staged HTML.
-//
-// Steps:
-//   1. Build the plugin.rb update with inlined staged HTML + CSS + JS
-//   2. Upload to production server
-//   3. Copy into Discourse container
-//   4. Restart Rails app
+// CYB-999210 — uploads staged HTML file and patches the cybernative-seo
+// Discourse plugin to serve it from disk (no inline HTML in Ruby).
 
 import { execSync } from 'node:child_process';
 import { readFileSync, writeFileSync, unlinkSync } from 'node:fs';
@@ -16,6 +11,9 @@ import { tmpdir } from 'node:os';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = join(__dirname, '..');
+
+const SRC_DIR = '/var/discourse/shared/standalone/tmp/cybernative-seo-src/cybernative-seo';
+const CONTAINER_PATH = 'app:/var/www/discourse/plugins/cybernative-seo';
 
 function readText(relPath) {
   return readFileSync(join(workspaceRoot, relPath), 'utf8');
@@ -34,21 +32,19 @@ function createSshAskpass(sshPass) {
   return ps1File;
 }
 
-function sshExec(command) {
+function sshExec(command, opts = {}) {
   const sshPass = getSecret('prod_ssh_root');
   const askpassScript = createSshAskpass(sshPass);
-
   const env = {
     ...process.env,
     SSH_ASKPASS: `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "${askpassScript}"`,
     DISPLAY: 'dummy',
     SSH_ASKPASS_REQUIRE: 'force',
   };
-
   try {
     const result = execSync(
       `ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 root@64.176.199.24 "${command.replace(/"/g, '\\"')}"`,
-      { env, encoding: 'utf8', timeout: 30000, stdio: ['pipe', 'pipe', 'pipe'] }
+      { env, encoding: 'utf8', timeout: opts.timeout || 30000, stdio: ['pipe', 'pipe', 'pipe'] }
     );
     return result;
   } finally {
@@ -59,14 +55,12 @@ function sshExec(command) {
 function scpFile(localPath, remotePath) {
   const sshPass = getSecret('prod_ssh_root');
   const askpassScript = createSshAskpass(sshPass);
-
   const env = {
     ...process.env,
     SSH_ASKPASS: `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "${askpassScript}"`,
     DISPLAY: 'dummy',
     SSH_ASKPASS_REQUIRE: 'force',
   };
-
   try {
     execSync(
       `scp -o StrictHostKeyChecking=no "${localPath}" root@64.176.199.24:"${remotePath}"`,
@@ -104,57 +98,54 @@ function buildStagedHtml() {
   return html;
 }
 
-function buildPluginRb(stagedHtml) {
-  const currentPluginRb = sshExec(
-    'cat /var/discourse/shared/standalone/tmp/cybernative-seo-src/cybernative-seo/plugin.rb'
-  );
-
-  const escapedHtml = stagedHtml
-    .replace(/\\/g, '\\\\')
-    .replace(/"/g, '\\"')
-    .replace(/\n/g, '\\n')
-    .replace(/\r/g, '');
-
-  const stagedMethod = `
-  def staged_connect
-    staged_html = "${escapedHtml}"
-    render html: staged_html.html_safe, layout: false, content_type: "text/html"
-  end`;
-
-  let updated = currentPluginRb;
-
-  updated = updated.replace(
-    /get "\/connect-ai-agent-to-discourse" => "cybernative_seo\/pages#show", defaults: { slug: "connect-ai-agent-to-discourse" }/,
-    'get "/connect-ai-agent-to-discourse" => "cybernative_seo/pages#staged_connect"'
-  );
-
-  updated = updated.replace(
-    '    def html_sitemap',
-    `${stagedMethod}\n\n    def html_sitemap`
-  );
-
-  return updated;
-}
-
 function main() {
   console.log('Building staged HTML with inlined CSS/JS...');
   const stagedHtml = buildStagedHtml();
   console.log(`Staged HTML: ${stagedHtml.length} bytes`);
 
-  console.log('\nBuilding updated plugin.rb...');
-  const pluginRb = buildPluginRb(stagedHtml);
-  console.log(`Updated plugin.rb: ${pluginRb.length} bytes`);
+  const tmpHtml = join(tmpdir(), 'connect-ai-agent-to-discourse.html');
+  writeFileSync(tmpHtml, stagedHtml, 'utf8');
+  console.log(`Wrote staged HTML to ${tmpHtml}`);
 
-  const tmpFile = join(tmpdir(), 'plugin-rb-cyb-999210.rb');
-  writeFileSync(tmpFile, pluginRb, 'utf8');
-  console.log(`Wrote plugin.rb to ${tmpFile}`);
+  console.log('\nUploading staged HTML to server...');
+  sshExec(`mkdir -p ${SRC_DIR}/staged`);
+  scpFile(tmpHtml, `${SRC_DIR}/staged/connect-ai-agent-to-discourse.html`);
 
-  console.log('\nUploading plugin.rb to production server...');
-  scpFile(tmpFile, '/var/discourse/shared/standalone/tmp/cybernative-seo-src/cybernative-seo/plugin.rb');
+  console.log('Patching plugin.rb to serve staged file from disk...');
+
+  const patchScript = `
+set -e
+PLUGIN="${SRC_DIR}/plugin.rb"
+BACKUP="${SRC_DIR}/plugin.rb.bak.cyb999210"
+
+cp "$PLUGIN" "$BACKUP"
+
+sed -i '/staged_connect/d' "$PLUGIN"
+sed -i 's|get "/connect-ai-agent-to-discourse" => "cybernative_seo/pages#staged_connect"|get "/connect-ai-agent-to-discourse" => "cybernative_seo/pages#show", defaults: { slug: "connect-ai-agent-to-discourse" }|' "$PLUGIN"
+
+if ! grep -q 'staged_file = File.join.*connect-ai-agent-to-discourse' "$PLUGIN"; then
+  sed -i '/^    def show$/a\\
+      if params[:slug] == "connect-ai-agent-to-discourse"\\
+        staged_file = File.join(Rails.root, "plugins", "cybernative-seo", "staged", "connect-ai-agent-to-discourse.html")\\
+        if File.exist?(staged_file)\\
+          return render html: File.read(staged_file).html_safe, layout: false, content_type: "text/html"\\
+        end\\
+      end' "$PLUGIN"
+fi
+
+echo "Patch complete"
+`;
+
+  const patchScriptFile = join(tmpdir(), 'patch-cyb999210.sh');
+  writeFileSync(patchScriptFile, patchScript, { encoding: 'utf8' });
+  scpFile(patchScriptFile, `${SRC_DIR}/patch-cyb999210.sh`);
+
+  sshExec(`bash ${SRC_DIR}/patch-cyb999210.sh`);
+  try { unlinkSync(patchScriptFile); } catch {}
 
   console.log('Copying plugin into Discourse container...');
   sshExec(
-    'docker cp /var/discourse/shared/standalone/tmp/cybernative-seo-src/cybernative-seo/plugin.rb app:/var/www/discourse/plugins/cybernative-seo/plugin.rb'
+    `docker cp ${SRC_DIR}/plugin.rb ${CONTAINER_PATH}/plugin.rb && docker cp ${SRC_DIR}/staged ${CONTAINER_PATH}/staged`
   );
 
   console.log('Restarting Discourse Rails app...');
@@ -163,7 +154,7 @@ function main() {
   );
   console.log(`Restart result: ${result.trim()}`);
 
-  try { unlinkSync(tmpFile); } catch {}
+  try { unlinkSync(tmpHtml); } catch {}
 
   console.log('\n=== DEPLOY COMPLETE ===');
   console.log('Verify: https://cybernative.ai/connect-ai-agent-to-discourse');
