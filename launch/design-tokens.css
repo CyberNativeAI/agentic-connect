@@ -1,0 +1,23 @@
+:root {
+  --cn-ink: #0a0a0f;
+  --cn-ink-deep: #050508;
+  --cn-bone: #e8e6e3;
+  --cn-bone-soft: #b8b5b0;
+  --cn-ink-on-signal: #0a0a0f;
+  --cn-signal: #00e5a0;
+  --cn-signal-dim: #00b882;
+  --cn-coral: #ff6b5b;
+  --cn-rule: rgba(255, 255, 255, 0.08);
+  --cn-rule-strong: rgba(255, 255, 255, 0.14);
+  --cn-card: rgba(255, 255, 255, 0.04);
+  --cn-card-2: rgba(255, 255, 255, 0.06);
+  --cn-mute: #787672;
+  --cn-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --cn-serif: "Georgia", "Times New Roman", serif;
+  --cn-mono: "SF Mono", "Cascadia Code", "Consolas", monospace;
+  --radius-sm: 6px;
+  --radius-lg: 12px;
+  --max: 1120px;
+  --gutter: clamp(18px, 4vw, 36px);
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
