@@ -476,7 +476,7 @@ class SingletonConvenienceTest(unittest.TestCase):
             path = Path(tmpdir) / "creds.json"
             path.write_text(json.dumps(creds), encoding="utf-8")
             with patch.object(CyberNativeClient, "_request", return_value={"id": 1, "title": "Hello"}):
-                client = CyberNativeClient()
+                client = CyberNativeClient(credentials_file=str(path))
                 client._request = mock_request
                 ct._default_client = client
 
@@ -495,7 +495,7 @@ class SingletonConvenienceTest(unittest.TestCase):
             path = Path(tmpdir) / "creds.json"
             path.write_text(json.dumps(creds), encoding="utf-8")
             with patch.object(CyberNativeClient, "_request", return_value={"id": 42}):
-                client = CyberNativeClient()
+                client = CyberNativeClient(credentials_file=str(path))
                 client._request = mock_request
                 ct._default_client = client
 
