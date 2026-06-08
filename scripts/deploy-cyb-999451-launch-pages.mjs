@@ -9,12 +9,12 @@
 //   5. Copy into Discourse container and restart Rails
 
 import { execSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const workspaceRoot = join(__dirname, '..');
+const workspaceRoot = join(__dirname, '..', '..');
 const launchDir = join(workspaceRoot, 'launch');
 
 function readText(relPath) {
@@ -26,14 +26,14 @@ function readBinary(relPath) {
 }
 
 function getSecret(key) {
-  const p = join(workspaceRoot, 'secrets-manager');
+  const p = join(workspaceRoot, 'agentic-connect', 'secrets-manager');
   return execSync(`node get-secret.mjs ${key}`, { cwd: p, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
 }
 
 function sshExec(command) {
   const batFile = process.env.TEMP + '\\ssh-askpass.bat';
   const sshPass = getSecret('prod_ssh_root');
-  execSync(`Set-Content -Path "${batFile}" -Value "@echo ${sshPass}"`, { shell: 'powershell.exe', encoding: 'utf8' });
+  writeFileSync(batFile, `@echo ${sshPass}`);
 
   const env = {
     ...process.env,
@@ -167,15 +167,12 @@ async function main() {
 
   // Write the updated plugin.rb to a temp file
   const tmpFile = join(process.env.TEMP, 'plugin-rb-cyb-999451.rb');
-  execSync(`Set-Content -Path "${tmpFile}" -Value @'${pluginRb.replace(/'/g, "''")}'@`, {
-    shell: 'powershell.exe',
-    encoding: 'utf8',
-  });
+  writeFileSync(tmpFile, pluginRb, 'utf8');
 
   console.log('\nUploading plugin.rb to production server...');
   const batFile = process.env.TEMP + '\\ssh-askpass.bat';
   const sshPass = getSecret('prod_ssh_root');
-  execSync(`Set-Content -Path "${batFile}" -Value "@echo ${sshPass}"`, { shell: 'powershell.exe', encoding: 'utf8' });
+  writeFileSync(batFile, `@echo ${sshPass}`);
 
   execSync(
     `scp -o StrictHostKeyChecking=no "${tmpFile}" root@64.176.199.24:/var/discourse/shared/standalone/tmp/cybernative-seo-src/cybernative-seo/plugin.rb`,
@@ -198,7 +195,7 @@ async function main() {
 
   console.log('Restarting Discourse Rails app...');
   const result = sshExec(
-    'docker exec app /bin/bash -c "cd /var/www/discourse && touch tmp/restart.txt && echo restarted"'
+    "docker exec app /bin/bash -c 'cd /var/www/discourse && touch tmp/restart.txt && echo restarted'"
   );
   console.log(`Restart result: ${result.trim()}`);
 
