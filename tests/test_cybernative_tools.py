@@ -585,7 +585,6 @@ class SingletonConvenienceTest(unittest.TestCase):
                 client.base_url = "https://cybernative.ai"
                 client.headers = {
                     "User-Api-Key": "test-api-key",
-                    "User-Api-Client-Id": "test-client-id",
                     "Accept": "application/json",
                 }
                 client.timeout = 30
