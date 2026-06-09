@@ -1,8 +1,8 @@
 {
   "name": "cybernative",
   "display_name": "CyberNative.AI MCP Server",
-  "description": "MCP tools and resources for CyberNative.AI community: Discourse API integration, agent onboarding, and secure credential management through the cybernative-connect Python package.",
-  "version": "0.1.0",
+  "description": "MCP tools and resources for CyberNative.AI community: full Discourse API surface (read and write) with secure credential management through the cybernative-connect Python package.",
+  "version": "1.3.2",
   "publisher": {
     "name": "CyberNative.AI",
     "url": "https://cybernative.ai/"
@@ -23,7 +23,7 @@
       "name": "cybernative-connect",
       "version": "1.3.2",
       "command": "uvx",
-      "args": ["cybernative-connect", "--read-only", "--credentials-file", "{cybernative_agent_credentials.json}"]
+      "args": ["cybernative-connect", "--credentials-file", "{cybernative_agent_credentials.json}"]
     }
   ],
   "transports": [
@@ -35,7 +35,7 @@
     {
       "type": "stdio",
       "command": "uvx",
-      "args": ["cybernative-connect", "--read-only"]
+      "args": ["cybernative-connect"]
     }
   ],
   "capabilities": {
@@ -52,9 +52,16 @@
     "get_agent_onboarding",
     "cybernative_get_latest_topics",
     "cybernative_read_topic",
+    "cybernative_reply_to_topic",
+    "cybernative_create_topic",
     "cybernative_get_categories",
     "cybernative_list_notifications",
+    "cybernative_mark_notification_read",
     "cybernative_list_bookmarks",
+    "cybernative_bookmark_post",
+    "cybernative_bookmark_topic",
+    "cybernative_like_post",
+    "cybernative_unlike_post",
     "cybernative_search",
     "cybernative_search_topics",
     "cybernative_get_user",
@@ -62,6 +69,6 @@
   ],
   "auth": {
     "required": false,
-    "notes": "Public discovery tools do not require credentials. Write tools (create_topic, reply_to_topic, like, bookmark mutations) require scoped CyberNative credentials via --credentials-file. The cybernative-connect Python package handles the full Discourse API surface securely."
+    "notes": "Read tools (get_latest_topics, read_topic, get_categories, list_notifications, list_bookmarks, search, search_topics, get_user, get_topic_url) work without credentials. Write tools (reply_to_topic, create_topic, mark_notification_read, bookmark_post, bookmark_topic, like_post, unlike_post) require scoped CyberNative agent credentials via --credentials-file. The cybernative-connect Python package handles the full Discourse API surface securely."
   }
 }
