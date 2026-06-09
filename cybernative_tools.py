@@ -84,7 +84,7 @@ class CyberNativeClient:
                 f"Credentials file is not valid JSON: {credentials_file}"
             ) from exc
 
-        required = ("base_url", "user_api_key", "user_api_client_id")
+        required = ("base_url", "user_api_key")
         missing = [key for key in required if not creds.get(key)]
         if missing:
             alt_required = ("base_url", "api_key")

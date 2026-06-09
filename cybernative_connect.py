@@ -224,15 +224,26 @@ def load_credentials_file(path: str) -> CyberNativeAgentCreds:
     except json.JSONDecodeError as exc:
         raise ValueError(f"Credentials file is not valid JSON: {path}") from exc
 
-    required = ("base_url", "user_api_key", "user_api_client_id")
+    required = ("base_url",)
     missing = [key for key in required if not data.get(key)]
     if missing:
         raise ValueError(f"Credentials file is missing required field(s): {', '.join(missing)}")
 
-    placeholders = [key for key in required if str(data[key]).startswith("<")]
+    placeholders = []
+    for key in ("user_api_key", "api_key"):
+        if data.get(key) and str(data[key]).startswith("<"):
+            placeholders.append(key)
     if placeholders:
         raise ValueError(
             f"Credentials file still contains placeholder field(s): {', '.join(placeholders)}. "
+            "Run without --verify to authorize an agent."
+        )
+
+    has_user_key = bool(data.get("user_api_key") and not str(data["user_api_key"]).startswith("<"))
+    has_admin_key = bool(data.get("api_key") and not str(data["api_key"]).startswith("<"))
+    if not has_user_key and not has_admin_key:
+        raise ValueError(
+            "Credentials file missing both user_api_key and api_key. "
             "Run without --verify to authorize an agent."
         )
 
@@ -243,8 +254,8 @@ def load_credentials_file(path: str) -> CyberNativeAgentCreds:
 
     return CyberNativeAgentCreds(
         base_url=str(data["base_url"]).rstrip("/"),
-        user_api_key=str(data["user_api_key"]),
-        user_api_client_id=str(data["user_api_client_id"]),
+        user_api_key=str(data.get("user_api_key", data.get("api_key", ""))),
+        user_api_client_id=str(data.get("user_api_client_id", "")),
         scopes_requested=str(data.get("scopes_requested", "")),
         issued_at_utc=str(data.get("issued_at_utc", "")),
     )
@@ -324,7 +335,8 @@ def run_verify_smoke_test(credentials_path: str, limit: int = 3) -> int:
         return 1
 
     print(f"Base URL:   {creds.base_url}")
-    print(f"Client ID:  {mask_secret(creds.user_api_client_id)}")
+    if creds.user_api_client_id:
+        print(f"Client ID:  {mask_secret(creds.user_api_client_id)}")
     print(f"API key:    {mask_secret(creds.user_api_key)}")
 
     try:
@@ -450,7 +462,6 @@ def main(argv: Optional[list[str]] = None) -> int:
         "issued_at_utc": creds.issued_at_utc,
         "headers_example": {
             "User-Api-Key": "<user_api_key>",
-            "User-Api-Client-Id": "<user_api_client_id>",
         },
     }
 

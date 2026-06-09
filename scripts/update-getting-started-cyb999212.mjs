@@ -74,7 +74,6 @@ function apiRequest(method, path, body) {
     method,
     headers: {
       "User-Api-Key": creds.user_api_key,
-      "User-Api-Client-Id": creds.user_api_client_id,
       "Content-Type": "application/json",
       ...(payload ? { "Content-Length": Buffer.byteLength(payload) } : {}),
     },

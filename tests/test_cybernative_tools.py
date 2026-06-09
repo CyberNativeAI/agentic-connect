@@ -433,7 +433,7 @@ class LoadCredentialsTest(unittest.TestCase):
                 CyberNativeClient(credentials_file=str(path), max_retries=0)
             self.assertIn("not valid JSON", str(ctx.exception))
 
-    def test_missing_required_field_raises_configuration_error(self) -> None:
+    def test_missing_client_id_is_accepted(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "creds.json"
             path.write_text(
@@ -445,9 +445,9 @@ class LoadCredentialsTest(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            with self.assertRaises(CyberNativeConfigurationError) as ctx:
-                CyberNativeClient(credentials_file=str(path), max_retries=0)
-            self.assertIn("user_api_client_id", str(ctx.exception))
+            client = CyberNativeClient(credentials_file=str(path), max_retries=0)
+            self.assertEqual(client.headers["User-Api-Key"], "secret-key")
+            self.assertNotIn("User-Api-Client-Id", client.headers)
 
     def test_placeholder_field_raises_configuration_error(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

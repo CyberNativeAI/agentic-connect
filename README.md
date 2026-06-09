@@ -449,9 +449,18 @@ Every direct API request must include:
 
 ```text
 User-Api-Key: <user_api_key>
-User-Api-Client-Id: <user_api_client_id>
 Accept: application/json
 ```
+
+Or for admin API key auth (recommended):
+
+```text
+Api-Key: <admin_api_key>
+Api-Username: system
+Accept: application/json
+```
+
+Do NOT include `User-Api-Client-Id` — it triggers a Cloudflare WAF block on cybernative.ai.
 
 Write requests also need:
 

@@ -40,14 +40,16 @@ def test_public():
 
 def test_auth(creds):
     s = requests.Session()
-    s.headers.update(
-        {
-            "Accept": "application/json",
-            "User-Agent": UA,
-            "User-Api-Key": creds["user_api_key"],
-            "User-Api-Client-Id": creds["user_api_client_id"],
-        }
-    )
+    hdrs = {
+        "Accept": "application/json",
+        "User-Agent": UA,
+    }
+    if "api_key" in creds:
+        hdrs["Api-Key"] = creds["api_key"]
+        hdrs["Api-Username"] = creds.get("api_username", "system")
+    else:
+        hdrs["User-Api-Key"] = creds["user_api_key"]
+    s.headers.update(hdrs)
     results = {}
     for ep in ENDPOINTS:
         try:

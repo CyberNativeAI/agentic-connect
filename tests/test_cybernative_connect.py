@@ -186,7 +186,7 @@ class LoadCredentialsFileTest(unittest.TestCase):
                 connect.load_credentials_file(str(path))
             self.assertIn("not valid JSON", str(ctx.exception))
 
-    def test_missing_required_fields_raises(self) -> None:
+    def test_missing_required_fields_succeeds_with_user_key_only(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "creds.json"
             path.write_text(
@@ -198,9 +198,8 @@ class LoadCredentialsFileTest(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            with self.assertRaises(ValueError) as ctx:
-                connect.load_credentials_file(str(path))
-            self.assertIn("user_api_client_id", str(ctx.exception))
+            creds = connect.load_credentials_file(str(path))
+            self.assertEqual(creds.user_api_key, "secret-key")
 
     def test_missing_multiple_fields_raises(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -209,7 +208,6 @@ class LoadCredentialsFileTest(unittest.TestCase):
             with self.assertRaises(ValueError) as ctx:
                 connect.load_credentials_file(str(path))
             self.assertIn("base_url", str(ctx.exception))
-            self.assertIn("user_api_key", str(ctx.exception))
 
     def test_placeholder_field_raises(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -480,7 +478,7 @@ class ExampleReadLatestStubTest(unittest.TestCase):
         connect.example_read_latest(self._make_creds())
 
         self.assertEqual(_StubHandler.request_headers.get("User-Api-Key"), "test-key")
-        self.assertEqual(_StubHandler.request_headers.get("User-Api-Client-Id"), "test-client")
+        self.assertIsNone(_StubHandler.request_headers.get("User-Api-Client-Id"))
 
     def test_raises_on_http_error_via_stub(self) -> None:
         _StubHandler.response_body = b"Not Found"
