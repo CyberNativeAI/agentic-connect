@@ -142,5 +142,10 @@ server.tool(
   }),
 );
 
-const transport = new StdioServerTransport();
-await server.connect(transport);
+const isMain = process.argv[1] && import.meta.url === `file://${process.argv[1]}`;
+if (isMain) {
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+}
+
+export { server, routes };
